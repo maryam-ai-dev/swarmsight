@@ -447,8 +447,9 @@
   <div class="mn">
     <div class="crumb"><span class="lk" data-t="officer">Cases for review</span> › HX-4471</div>
     <h1>HX-4471, housing appeal</h1>
-    <div class="warn" style="margin-top:16px"><span class="ico">!</span><span class="tx">Involves eviction risk and dependent children. This decision needs an officer.</span></div>
-    <p class="lead">For your review because the case mentions eviction risk and dependent children, and the evidence is incomplete, under Housing Appeals Policy HA-09, section 4.</p>
+    <div id="caseVerdictStatus" style="margin-top:10px;font-size:13px;color:#505a5f">Loading verdict from Authority…</div>
+    <div class="warn" style="margin-top:16px"><span class="ico">!</span><span class="tx" id="caseWarn">Involves eviction risk and dependent children. This decision needs an officer.</span></div>
+    <p class="lead" id="caseLead">For your review because the case mentions eviction risk and dependent children, and the evidence is incomplete, under Housing Appeals Policy HA-09, section 4.</p>
     <div class="h2">Evidence</div>
     <p class="src" style="margin-top:14px"><span class="l">Income above threshold</span>, assessment.pdf p.3 · <b>strong</b></p>
     <p class="src"><span class="l">Current tenancy confirmed</span>, tenancy record · <b>strong</b></p>
@@ -460,7 +461,7 @@
       <div class="r"><span class="k">Decision</span><span class="vv">You</span></div>
       <div class="r"><span class="k">The service did</span><span class="vv">Prepared evidence and a draft</span></div>
     </div>
-    <div class="certline">Prepared under certificate SWS-CERT-HX-V3-0047 · policy HA-09 v7. The service is certified to draft, not to send.</div>
+    <div class="certline" id="caseCertline">Prepared under certificate SWS-CERT-HX-V3-0047 · policy HA-09 v7. The service is certified to draft, not to send.</div>
     <div style="margin-top:8px"><span class="btn">Accept and send</span><span class="btn sec">Edit draft</span><span class="btn sec">Request evidence</span><span class="btn sec">Escalate to senior</span></div>
     <div class="nav2"><span class="lk" data-t="officer">← Back to cases</span><span style="display:flex;gap:18px"><span class="lk" data-t="masking">What the agent could see</span><span class="lk" data-t="audit">See the full record →</span></span></div>
   </div>
@@ -557,6 +558,31 @@
     var el=e.target.closest('[data-t]');
     if(el){go(el.dataset.t);}
   });
+
+  // Sprint 1: the Case surface renders a real Verdict from Authority. Read-only.
+  // The buttons stay inert until the sprint that builds the command behind them.
+  var AUTHORITY_API = 'http://localhost:8080';
+  var CASE_REF = 'HX-4471';
+  function renderVerdict(){
+    var status=document.getElementById('caseVerdictStatus');
+    fetch(AUTHORITY_API+'/cases/'+encodeURIComponent(CASE_REF)+'/verdict')
+      .then(function(r){if(!r.ok){throw new Error('HTTP '+r.status);}return r.json();})
+      .then(function(v){
+        var effectLabel={ALLOW:'Cleared',HOLD:'Held for an officer',BLOCK:'Blocked'}[v.effect]||v.effect;
+        status.innerHTML='Live verdict from Authority: <b>'+effectLabel+'</b> · ledger row #'+v.seq+
+          ' · row hash <code>'+String(v.rowHash).slice(0,12)+'…</code>';
+        status.style.color = v.effect==='ALLOW' ? '#00703c' : '#d4351c';
+        document.getElementById('caseWarn').textContent=v.reviewBrief;
+        document.getElementById('caseLead').textContent=v.reviewBrief;
+        document.getElementById('caseCertline').textContent=
+          'Decided under policy HA-09 '+v.policyVersion+', reason '+v.reasonCode+
+          '. The service is certified to draft, not to send.';
+      })
+      .catch(function(err){
+        status.textContent='Could not reach Authority ('+err.message+'). Showing demo text.';
+      });
+  }
+  renderVerdict();
 </script>
 </body>
 </html>

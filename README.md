@@ -17,7 +17,31 @@ stop.
 
 ## What works end to end
 
-### Sprint 0: scaffold and guardrails (current)
+### Sprint 1: the ledger and the verdict path (current)
+
+- POST `/decide` takes a DecisionRequest, decides allow, hold, or block against
+  the hardcoded HA-09 policy, writes exactly one hash-chained LedgerRow, and
+  returns a Verdict.
+- The ledger is append-only and hash-chained. seq is gapless, every prev_hash
+  links to the row before it, and every row_hash recomputes. Proven by a test
+  that writes 1000 rows concurrently.
+- The database rejects UPDATE, DELETE, and TRUNCATE on `ledger_rows`. Proven by
+  a test.
+- Every fail-closed case (unknown action, unresolvable policy, missing or
+  expired certificate, required input absent, internal error) resolves to hold
+  or block, never allow. Proven by tests.
+- Idempotency on `request_id`: a repeat returns the original Verdict and writes
+  no second row. Proven by a test.
+- Read endpoints: GET `/cases/{caseRef}/verdict` (latest verdict for a case)
+  and GET `/runs/{runId}` (a RunContext and its ledger rows).
+- Frontend: the demo's Case surface (HX-4471) renders a real Verdict fetched
+  from Authority, read-only. The decision buttons are still inert; the command
+  behind them comes in a later sprint.
+
+The hash recipe, seq allocation, genesis, idempotency, and fail-closed mapping
+are locked in DECISIONS.md.
+
+### Sprint 0: scaffold and guardrails
 
 - Both services build and run with a health endpoint each.
 - `docker compose up` brings up Authority, Intelligence, and Postgres.
@@ -37,9 +61,23 @@ docker compose up --build
 - Intelligence health: http://localhost:8000/health
 - Intelligence propose: http://localhost:8000/propose
 
+### Trying the verdict path
+
+```
+curl -X POST http://localhost:8080/decide -H 'Content-Type: application/json' -d '{
+  "requestId": "demo-1", "runId": "run-1", "caseRef": "CASE-1",
+  "actor": "agent-housing-1", "workflow": "HA-09", "action": "draft_response",
+  "inputs": {"tenancy_status": "secure", "eviction_risk": true, "dependent_children": true}
+}'
+```
+
+Open `swarmsight-connected-demo.html` in a browser with the stack running. The
+Case surface (HX-4471) fetches and renders its real Verdict from Authority.
+
 ## Running tests
 
-Authority:
+Authority (needs a running Docker daemon: the integration tests use
+Testcontainers to spin up Postgres):
 
 ```
 cd authority && mvn test

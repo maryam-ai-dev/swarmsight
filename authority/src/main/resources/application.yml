@@ -13,3 +13,8 @@ spring:
 
 server:
   port: 8080
+
+swarmsight:
+  # Seed the demo case HX-4471 on startup so the Case surface has a real verdict
+  # to render. Idempotent. Switch off in tests.
+  demo-seed: true
