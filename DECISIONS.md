@@ -573,6 +573,53 @@ scoped follow-up. This change narrows the door to that end state without the
 invasive threading; the seam (the governance context, the presence states, and
 the named registry) is what the follow-up builds on.
 
+## Security hardening pass
+
+Locked 2026-06-29.
+
+### Containment is airtight on the fetch path too: the agent-level flag
+
+Closing the issuance gap left a symmetric one: a capability minted in the race
+window between a decide reading the certificate as ACTIVE and an incident's
+suspend committing could land after the incident's revocation snapshot and still
+be honoured at fetch. So containment now sets an agent-level flag
+(`suspended_agents`), and the broker refuses every fetch by a flagged agent,
+regardless of the capability's own state. An incident sets the flag; a passing
+re-certification lifts it, which is the only way back. The flag is checked after
+the per-capability revoked check, so an incident-revoked capability still reports
+REVOKED, while an escapee reports AGENT_SUSPENDED. Belt and suspenders: the
+revocation loop is the immediate, audited cleanup; the flag is the guarantee.
+
+### CORS is configurable, lockdown-ready
+
+The allowed origins are a property (`swarmsight.cors.allowed-origins`,
+comma-separated patterns). The default stays open so the static demo can be
+opened from the filesystem; a pilot sets it to its real frontend origin. Only
+GET and POST, no credentials.
+
+### Internal-error holds are counted and alertable
+
+An internal error in the decide path fails closed to a hold and writes no ledger
+row, so it cannot be counted from the ledger. A live counter
+(`DecisionMetrics`) is exposed as `internal_errors` on the oversight metrics and
+logged with an ALERT marker, so a rising rate of bug-driven holds is visible
+rather than silent.
+
+### Scheduled for the next pass
+
+Two small items, deliberately deferred, not lost:
+
+- An idempotency guard on capability issuance: a reused `request_id` returns the
+  first capability even if the new request names a different connector or scope.
+  Add a check that the stored capability matches, or reject with a conflict.
+- The decide path's replay branch (the `request_id` lookup) sits outside the
+  fail-closed `try`, so a store error there surfaces as a 500 rather than a hold.
+  Move it inside.
+
+Left for when real data replaces the demo fixtures: the per-agent log identity
+(the worked case is attributed to a different actor than the certified agent) and
+the oversight decision counts (inflated by Arena and shadow decisions).
+
 ### The port keeps the dependency clean
 
 The decision package reads certificates through a CertificateAuthority port it

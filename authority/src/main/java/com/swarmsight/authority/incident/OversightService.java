@@ -1,5 +1,6 @@
 package com.swarmsight.authority.incident;
 
+import com.swarmsight.authority.decision.DecisionMetrics;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -13,9 +14,11 @@ import org.springframework.stereotype.Service;
 public class OversightService {
 
     private final JdbcTemplate jdbc;
+    private final DecisionMetrics decisionMetrics;
 
-    public OversightService(JdbcTemplate jdbc) {
+    public OversightService(JdbcTemplate jdbc, DecisionMetrics decisionMetrics) {
         this.jdbc = jdbc;
+        this.decisionMetrics = decisionMetrics;
     }
 
     public Map<String, Object> metrics() {
@@ -34,6 +37,9 @@ public class OversightService {
         m.put("deployments", count("SELECT count(*) FROM deployment_approvals"));
         m.put("incidents", count("SELECT count(*) FROM incidents"));
         m.put("revoked_capabilities", count("SELECT count(*) FROM capabilities WHERE revoked_at IS NOT NULL"));
+        m.put("suspended_agents", count("SELECT count(*) FROM suspended_agents"));
+        // Internal-error holds leave no ledger trail; this is the live counter.
+        m.put("internal_errors", decisionMetrics.internalErrors());
         return m;
     }
 

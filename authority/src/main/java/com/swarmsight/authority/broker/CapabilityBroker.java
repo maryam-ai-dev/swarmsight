@@ -34,6 +34,7 @@ public class CapabilityBroker {
     private static final String FETCH = "source_fetch";
 
     private final CapabilityRepository capabilityRepository;
+    private final AgentSuspensionRepository agentSuspensionRepository;
     private final LedgerService ledgerService;
     private final PolicyRepository policyRepository;
     private final RunContextRepository runContextRepository;
@@ -44,6 +45,7 @@ public class CapabilityBroker {
 
     public CapabilityBroker(
             CapabilityRepository capabilityRepository,
+            AgentSuspensionRepository agentSuspensionRepository,
             LedgerService ledgerService,
             PolicyRepository policyRepository,
             RunContextRepository runContextRepository,
@@ -52,6 +54,7 @@ public class CapabilityBroker {
             List<Connector> connectorList,
             @Value("${swarmsight.capability.ttl-seconds:300}") long ttlSeconds) {
         this.capabilityRepository = capabilityRepository;
+        this.agentSuspensionRepository = agentSuspensionRepository;
         this.ledgerService = ledgerService;
         this.policyRepository = policyRepository;
         this.runContextRepository = runContextRepository;
@@ -59,6 +62,16 @@ public class CapabilityBroker {
         this.permissionMirror = permissionMirror;
         this.connectors = connectorList.stream().collect(Collectors.toMap(Connector::name, Function.identity()));
         this.ttlSeconds = ttlSeconds;
+    }
+
+    /** Flag an agent as contained, so the broker refuses every fetch by it. */
+    public void suspendAgent(String agentId, String reason) {
+        agentSuspensionRepository.suspend(agentId, reason, Instant.now());
+    }
+
+    /** Lift an agent's containment, on re-certification. */
+    public void liftSuspension(String agentId) {
+        agentSuspensionRepository.lift(agentId);
     }
 
     /** The result of asking for a capability: the verdict, and a capability iff allowed. */
@@ -145,6 +158,12 @@ public class CapabilityBroker {
 
         if (cap.isRevoked()) {
             throw new BrokerException(BrokerException.Reason.REVOKED, "Capability has been revoked.");
+        }
+        // The agent-level containment flag: airtight even for a capability that
+        // escaped an incident's revocation snapshot.
+        if (agentSuspensionRepository.isSuspended(cap.actor())) {
+            throw new BrokerException(BrokerException.Reason.AGENT_SUSPENDED,
+                    "The agent is suspended; the broker is not honouring its capabilities.");
         }
         if (cap.isExpiredAt(Instant.now())) {
             throw new BrokerException(BrokerException.Reason.EXPIRED, "Capability has expired.");

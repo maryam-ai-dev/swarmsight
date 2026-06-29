@@ -74,6 +74,10 @@ public class IncidentService {
                     map("agent_id", agentId, "actions", disabledActions), incidentId + ":disable");
         }
 
+        // Set the agent-level containment flag first, so any capability that
+        // escapes the revocation snapshot below is still refused at fetch.
+        broker.suspendAgent(agentId, "incident containment: " + trigger);
+
         // Revoke the agent's live capabilities through the broker.
         List<String> revokedCapabilities = new ArrayList<>();
         Set<String> heldCases = new LinkedHashSet<>();

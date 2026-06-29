@@ -76,6 +76,27 @@ class IncidentIT {
     }
 
     @Test
+    void theAgentFlagRefusesACapabilityThatEscapedRevocationAndReCertLiftsIt() {
+        certify("inc-flag");
+        IssueResult issue = capabilityFor("inc-flag", "CASE-INC-FLAG");
+        String capId = issue.capability().id();
+        assertThat(broker.fetch(capId, CONNECTOR, "tenancy_record", "CASE-INC-FLAG", "draft_response")).isNotNull();
+
+        // Flag the agent without revoking this capability: the escapee case.
+        broker.suspendAgent("inc-flag", "incident containment");
+
+        BrokerException ex = catchThrowableOfType(
+                () -> broker.fetch(capId, CONNECTOR, "tenancy_record", "CASE-INC-FLAG", "draft_response"),
+                BrokerException.class);
+        assertThat(ex.reason()).isEqualTo(BrokerException.Reason.AGENT_SUSPENDED);
+
+        // Re-certification is the only way back: it lifts the flag, and the
+        // unrevoked capability works again.
+        certify("inc-flag");
+        assertThat(broker.fetch(capId, CONNECTOR, "tenancy_record", "CASE-INC-FLAG", "draft_response")).isNotNull();
+    }
+
+    @Test
     void inFlightCasesAreHeldNotReDecided() {
         certify("inc-b");
         capabilityFor("inc-b", "CASE-INC-B");

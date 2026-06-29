@@ -35,6 +35,7 @@ public class DecisionService {
     private final LedgerRepository ledgerRepository;
     private final RunContextRepository runContextRepository;
     private final ObjectMapper objectMapper;
+    private final DecisionMetrics decisionMetrics;
 
     public DecisionService(
             PolicyRepository policyRepository,
@@ -43,7 +44,8 @@ public class DecisionService {
             LedgerService ledgerService,
             LedgerRepository ledgerRepository,
             RunContextRepository runContextRepository,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            DecisionMetrics decisionMetrics) {
         this.policyRepository = policyRepository;
         this.verdictEngine = verdictEngine;
         this.certificateService = certificateService;
@@ -51,6 +53,7 @@ public class DecisionService {
         this.ledgerRepository = ledgerRepository;
         this.runContextRepository = runContextRepository;
         this.objectMapper = objectMapper;
+        this.decisionMetrics = decisionMetrics;
     }
 
     /** Decide under the governed regime, the default for every external path. */
@@ -99,7 +102,10 @@ public class DecisionService {
             return verdict.boundTo(row.seq(), row.rowHash());
         } catch (Exception e) {
             // Fail closed: any internal error holds the case. There may be no row.
-            log.error("Decide path failed for request {}; holding", req.requestId(), e);
+            // Count it: an internal-error hold leaves no ledger trail, so this
+            // counter is how a rising rate of bug-driven holds becomes visible.
+            decisionMetrics.recordInternalError();
+            log.error("ALERT decide path failed for request {}; holding (internal error)", req.requestId(), e);
             return Verdict.of(Effect.HOLD, ReasonCode.INTERNAL_ERROR,
                     "An internal error occurred while deciding. The case is held for human review.",
                     "unknown", req.runId(), req.caseRef(), req.action());

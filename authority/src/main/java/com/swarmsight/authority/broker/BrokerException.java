@@ -11,6 +11,7 @@ public class BrokerException extends RuntimeException {
         NO_CAPABILITY,
         EXPIRED,
         REVOKED,
+        AGENT_SUSPENDED,
         EXCEEDS_VERDICT,
         UNKNOWN_CONNECTOR
     }

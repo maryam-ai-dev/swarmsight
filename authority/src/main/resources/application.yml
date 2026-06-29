@@ -27,3 +27,7 @@ swarmsight:
     # the certified regime, decided on policy alone. Empty this for production;
     # any unlisted, uncertified actor is blocked. See DECISIONS.md.
     shadow-actors: ${SHADOW_ACTORS:agent-1,agent-housing-1}
+  cors:
+    # Comma-separated origin patterns. The default is open for the demo; a pilot
+    # locks this to its real frontend origin, for example https://swarmsight.gov.uk.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:*}

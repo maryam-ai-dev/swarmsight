@@ -1,5 +1,6 @@
 package com.swarmsight.authority.arena;
 
+import com.swarmsight.authority.broker.CapabilityBroker;
 import com.swarmsight.authority.ledger.LedgerService;
 import com.swarmsight.authority.run.RunContextRepository;
 import java.time.Duration;
@@ -24,6 +25,7 @@ public class CertificationService {
     private final CertificateRepository certificateRepository;
     private final LedgerService ledgerService;
     private final RunContextRepository runContextRepository;
+    private final CapabilityBroker broker;
 
     public CertificationService(
             ArenaRunner arenaRunner,
@@ -31,13 +33,15 @@ public class CertificationService {
             AssuranceCaseRepository assuranceCaseRepository,
             CertificateRepository certificateRepository,
             LedgerService ledgerService,
-            RunContextRepository runContextRepository) {
+            RunContextRepository runContextRepository,
+            CapabilityBroker broker) {
         this.arenaRunner = arenaRunner;
         this.assuranceCaseBuilder = assuranceCaseBuilder;
         this.assuranceCaseRepository = assuranceCaseRepository;
         this.certificateRepository = certificateRepository;
         this.ledgerService = ledgerService;
         this.runContextRepository = runContextRepository;
+        this.broker = broker;
     }
 
     /** The result of a certification attempt: the run, and a certificate iff it passed. */
@@ -72,6 +76,10 @@ public class CertificationService {
                 arenaResult.recommendedCeiling(), builder, approver, now, now.plus(VALIDITY),
                 CertStatus.ACTIVE.name());
         certificateRepository.insert(certificate, arenaResult);
+
+        // A passing (re-)certification lifts any incident containment, the only
+        // way an agent returns to live.
+        broker.liftSuspension(agentId);
 
         ledgerIssuance(certificate, now);
         return new Outcome(arenaResult, assuranceCase, certificate, null);

@@ -40,7 +40,7 @@ class DecisionServiceTest {
 
     private DecisionService service() {
         return new DecisionService(policyRepository, verdictEngine, certificateService, ledgerService,
-                ledgerRepository, runContextRepository, new ObjectMapper());
+                ledgerRepository, runContextRepository, new ObjectMapper(), new DecisionMetrics());
     }
 
     private DecisionRequest request() {
