@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.swarmsight.authority.decision.CertificateCheck;
-import com.swarmsight.authority.decision.CertificateStatus;
 import com.swarmsight.authority.decision.DecisionRequest;
 import com.swarmsight.authority.decision.DecisionService;
 import com.swarmsight.authority.decision.EngineResult;
@@ -47,7 +46,8 @@ class PolicyVersioningIT {
     @Autowired private JdbcTemplate jdbc;
     @Autowired private TestRestTemplate rest;
 
-    private final CertificateCheck validCert = new CertificateCheck(CertificateStatus.VALID, Level.L2);
+    // Policy versioning is about policy effect, not certificates: policy-only path.
+    private final CertificateCheck validCert = CertificateCheck.none();
 
     private Map<String, Object> evictionInputs(boolean evidencePresent) {
         return Map.of(

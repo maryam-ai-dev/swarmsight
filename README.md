@@ -16,7 +16,22 @@ stop.
 
 ## What works end to end
 
-### Sprint 9: incident response and revocation (current)
+### Hardening: close the suspended-certificate issuance gap (current)
+
+- The verdict path reads the real certificate status at decision time instead of
+  the Sprint 2 stub. A suspended, expired, or revoked certificate is now refused
+  at issuance (BLOCK), so a fresh DecisionRequest mints no capability, closing the
+  gap where containment held everywhere except the issuance path.
+- An allow requires a present, ACTIVE certificate, the requested action in its
+  certified set, and the level within its ceiling. An unreadable store fails
+  closed to block. A decision whose actor holds no certificate is decided on
+  policy alone (the prior behaviour), so enforcement begins once an agent is
+  certified.
+- The certificate status that applied is recorded on the decision's LedgerRow.
+- The decision package reads certificates through a port it owns, implemented by
+  an adapter in the arena package, so no package cycle is introduced.
+
+### Sprint 9: incident response and revocation
 
 - An incident is raised by a trigger (missed escalation, guard breach, source
   stale, confidence collapse, human report). POST `/incidents` runs containment.

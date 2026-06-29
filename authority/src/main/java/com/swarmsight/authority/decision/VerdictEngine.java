@@ -39,10 +39,24 @@ public class VerdictEngine {
                     "Action " + req.action() + " is not permitted under " + label + ".",
                     policy.version(), req);
         }
-        if (!cert.isValid()) {
-            return structural(Effect.HOLD, ReasonCode.CERTIFICATE_INVALID,
-                    "The agent's certificate is missing or expired. Routed for human handling.",
-                    policy.version(), req);
+        // The certificate, read live. Fail closed on an unreadable store or a
+        // certificate that is present but not ACTIVE or not certified for the
+        // action. A missing certificate is the un-governed policy-only path.
+        if (cert.presence() == CertificateCheck.Presence.UNREADABLE) {
+            return structural(Effect.BLOCK, ReasonCode.CERTIFICATE_UNREADABLE,
+                    "The certificate store could not be read; failing closed.", policy.version(), req);
+        }
+        if (cert.present()) {
+            if (!cert.active()) {
+                return structural(Effect.BLOCK, ReasonCode.CERTIFICATE_NOT_ACTIVE,
+                        "The agent's certificate is " + cert.status() + "; it is not cleared to act.",
+                        policy.version(), req);
+            }
+            if (!cert.certifiedActions().contains(req.action())) {
+                return structural(Effect.BLOCK, ReasonCode.ACTION_NOT_CERTIFIED,
+                        "The agent is not certified for action " + req.action() + ".",
+                        policy.version(), req);
+            }
         }
         Map<String, Object> inputs = req.safeInputs();
         for (String required : policy.requiredInputs()) {
@@ -67,8 +81,10 @@ public class VerdictEngine {
             }
         }
 
-        // The certificate ceiling, lowered by confidence. Never raised.
-        Level effectiveCeiling = applyConfidence(cert.ceiling(), inputs);
+        // The certificate ceiling, lowered by confidence. Never raised. A
+        // policy-only decision (no certificate) uses the default ceiling.
+        Level baseCeiling = cert.present() ? cert.ceiling() : Level.L2;
+        Level effectiveCeiling = applyConfidence(baseCeiling, inputs);
 
         Effect effect;
         String reasonCode;

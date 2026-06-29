@@ -69,7 +69,8 @@ public class CertificationService {
         Certificate certificate = new Certificate(
                 "cert-" + agentId, agentId, assuranceCase.id(),
                 arenaResult.certifiedActions(), arenaResult.notCertifiedActions(),
-                arenaResult.recommendedCeiling(), builder, approver, now, now.plus(VALIDITY), "ACTIVE");
+                arenaResult.recommendedCeiling(), builder, approver, now, now.plus(VALIDITY),
+                CertStatus.ACTIVE.name());
         certificateRepository.insert(certificate, arenaResult);
 
         ledgerIssuance(certificate, now);

@@ -522,3 +522,39 @@ reactivates it. There is no manual un-suspend.
 
 An incident produces an audit pack: the incident record and the run-filtered
 ledger rows for its containment, so the whole response is provable.
+
+## Hardening: close the suspended-certificate issuance gap
+
+Locked 2026-06-29.
+
+### Certificate status is an explicit enum, read at decision time
+
+A certificate's status is one of ACTIVE, SUSPENDED, EXPIRED, REVOKED,
+REVIEW_REQUIRED, PENDING_RECERTIFICATION. The verdict path reads it from the real
+certificate store at decision time, never cached past the decision, so a suspend
+takes effect on the very next decision, the same immediacy the broker already
+has. The verdict path treats anything other than ACTIVE as fail-closed.
+
+### Fail closed on the certificate read
+
+When a certificate is present, an allow requires it to be ACTIVE, the requested
+action to be in its certified set, and the resolved level to be within its
+ceiling. Any failure blocks. If the store cannot be read, the verdict blocks; the
+read error is never an allow. The certificate status that applied is recorded on
+the decision's LedgerRow.
+
+### No certificate present is the un-governed path, not a block
+
+A decision whose actor holds no certificate is decided on policy alone, the
+behaviour before this change. This is deliberate: the platform serves both
+certified agents and direct, uncertified policy decisions (and an agent is
+necessarily uncertified while the Arena is still deciding whether to certify it).
+Enforcement begins the moment an agent holds a certificate. Once it does, a
+suspended, expired, or revoked certificate blocks every path, issuance included,
+not just the broker and the gate. This is the gap that is now closed.
+
+### The port keeps the dependency clean
+
+The decision package reads certificates through a CertificateAuthority port it
+owns; an adapter in the arena package implements it over the certificate store.
+The decision package does not depend on the arena package.

@@ -74,6 +74,7 @@ public class DecisionService {
             payload.put("effect", verdict.effect().name());
             payload.put("reason_code", verdict.reasonCode());
             payload.put("review_brief", verdict.reviewBrief());
+            payload.put("certificate_status", certificate.status());
             payload.put("required_level", result.requiredLevel() == null ? null : result.requiredLevel().name());
             payload.put("effective_ceiling", result.effectiveCeiling() == null ? null : result.effectiveCeiling().name());
             payload.put("triggered_guards", result.triggeredGuards());

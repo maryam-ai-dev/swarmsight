@@ -41,7 +41,7 @@ class VerdictEngineTest {
     }
 
     private CertificateCheck validCert(Level ceiling) {
-        return new CertificateCheck(CertificateStatus.VALID, ceiling);
+        return CertificateCheck.present("ACTIVE", ceiling, java.util.Set.of("draft_response"));
     }
 
     private Map<String, Object> clearInputs() {
@@ -147,12 +147,38 @@ class VerdictEngineTest {
     }
 
     @Test
-    void invalidCertificateHolds() {
+    void aSuspendedCertificateBlocks() {
         EngineResult r = engine.evaluate(request(clearInputs()),
                 Optional.of(policy(Map.of("draft_response", Level.L1), List.of())),
-                new CertificateCheck(CertificateStatus.EXPIRED, Level.L0));
-        assertThat(r.verdict().effect()).isEqualTo(Effect.HOLD);
-        assertThat(r.verdict().reasonCode()).isEqualTo(ReasonCode.CERTIFICATE_INVALID);
+                CertificateCheck.present("SUSPENDED", Level.L2, java.util.Set.of("draft_response")));
+        assertThat(r.verdict().effect()).isEqualTo(Effect.BLOCK);
+        assertThat(r.verdict().reasonCode()).isEqualTo(ReasonCode.CERTIFICATE_NOT_ACTIVE);
+    }
+
+    @Test
+    void anUnreadableCertificateStoreBlocks() {
+        EngineResult r = engine.evaluate(request(clearInputs()),
+                Optional.of(policy(Map.of("draft_response", Level.L1), List.of())),
+                CertificateCheck.unreadable());
+        assertThat(r.verdict().effect()).isEqualTo(Effect.BLOCK);
+        assertThat(r.verdict().reasonCode()).isEqualTo(ReasonCode.CERTIFICATE_UNREADABLE);
+    }
+
+    @Test
+    void anActionOutsideTheCertifiedSetBlocks() {
+        EngineResult r = engine.evaluate(request(clearInputs()),
+                Optional.of(policy(Map.of("draft_response", Level.L1), List.of())),
+                CertificateCheck.present("ACTIVE", Level.L2, java.util.Set.of("request_evidence")));
+        assertThat(r.verdict().effect()).isEqualTo(Effect.BLOCK);
+        assertThat(r.verdict().reasonCode()).isEqualTo(ReasonCode.ACTION_NOT_CERTIFIED);
+    }
+
+    @Test
+    void noCertificateIsTheUngovernedPolicyOnlyPath() {
+        EngineResult r = engine.evaluate(request(clearInputs()),
+                Optional.of(policy(Map.of("draft_response", Level.L1), List.of())),
+                CertificateCheck.none());
+        assertThat(r.verdict().effect()).isEqualTo(Effect.ALLOW);
     }
 
     @Test

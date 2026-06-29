@@ -1,11 +1,9 @@
 package com.swarmsight.authority.workbench;
 
 import com.swarmsight.authority.decision.CertificateCheck;
-import com.swarmsight.authority.decision.CertificateStatus;
 import com.swarmsight.authority.decision.DecisionRequest;
 import com.swarmsight.authority.decision.EngineResult;
 import com.swarmsight.authority.decision.VerdictEngine;
-import com.swarmsight.authority.policy.Level;
 import com.swarmsight.authority.policy.PolicyVersion;
 import com.swarmsight.authority.workbench.ShadowReplayReport.ReplayCase;
 import com.swarmsight.authority.workbench.ShadowReplayReport.ReplayResult;
@@ -22,8 +20,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class ShadowReplayer {
 
-    private static final CertificateCheck REPLAY_CERT =
-            new CertificateCheck(CertificateStatus.VALID, Level.L2);
+    // Replay is about policy effect, not certificates, so it runs the policy-only
+    // path.
+    private static final CertificateCheck REPLAY_CERT = CertificateCheck.none();
 
     private final VerdictEngine verdictEngine;
 
