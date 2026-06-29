@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SwarmSight, connected demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;background:#2a2d31;color:#17150F;-webkit-font-smoothing:antialiased}
+  .disp{font-family:"Archivo",system-ui,sans-serif}
+
+  /* ---------- shell ---------- */
+  .shell{position:sticky;top:0;z-index:100;background:#101216;color:#e7e7e3;border-bottom:1px solid #000}
+  .shell-row{display:flex;align-items:center;gap:14px;padding:9px 16px;flex-wrap:wrap}
+  .shell-brand{font-family:"Archivo",sans-serif;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#9aa0a6}
+  .shell-brand b{color:#fff}
+  .shell-nav{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .grp{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#6b7177;margin:0 2px 0 8px}
+  .tabb{font-size:12.5px;color:#c9cdd2;background:transparent;border:1px solid #2c3036;padding:5px 10px;border-radius:3px;cursor:pointer;font-family:inherit}
+  .tabb:hover{border-color:#4a5058;color:#fff}
+  .tabb.on{background:#e7e7e3;color:#101216;border-color:#e7e7e3;font-weight:700}
+  .frame{max-width:1080px;margin:18px auto;background:#fff;border-radius:3px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.4)}
+  .screen{display:none}.screen.on{display:block}
+
+  /* ===================================================== BRAND landing */
+  .reg-brand{--paper:#FBFBF8;--card:#fff;--ink:#17150F;--ink2:#3a382f;--sub:#6c6a60;--line:#e7e6df;--lineS:#1b1b14;--ox:#A23329;--green:#1a7a52;--amber:#9a6b1e;--amberbg:#fbf4e6;--red:#a8392e;background:var(--paper);color:var(--ink)}
+  .reg-brand .wrap{max-width:1000px;margin:0 auto;padding:0 34px}
+  .reg-brand .eyebrow{font-family:"Archivo";font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ox);display:inline-flex;align-items:center;gap:9px}
+  .reg-brand .eyebrow::before{content:"";width:22px;height:2px;background:var(--ox)}
+  .reg-brand .hero{padding:56px 0 56px}
+  .reg-brand .hgrid{display:grid;grid-template-columns:1.04fr .96fr;gap:50px;align-items:center}
+  .reg-brand h1{font-family:"Archivo";font-weight:800;font-size:clamp(31px,4.4vw,48px);letter-spacing:-.02em;line-height:1.08;margin-top:18px}
+  .reg-brand .lede{font-size:18px;color:var(--ink2);margin-top:18px;max-width:30em;line-height:1.5}
+  .reg-brand .ctas{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap}
+  .reg-brand .btn{display:inline-block;font-family:"Archivo";font-weight:600;font-size:15px;padding:12px 20px;border-radius:3px;border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);text-decoration:none;cursor:pointer}
+  .reg-brand .btn.ox{background:var(--ox);border-color:var(--ox)}
+  .reg-brand .btn.out{background:transparent;color:var(--ink)}
+  .reg-brand .btn.light{background:var(--paper);color:var(--ink);border-color:var(--paper)}
+  .reg-brand .btn.ghost{background:transparent;color:var(--paper);border-color:rgba(255,255,255,.4)}
+  .reg-brand .micro{margin-top:20px;font-size:13.5px;color:var(--sub);display:flex;align-items:center;gap:8px}
+  .reg-brand .micro .dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+  .reg-brand .gate{background:var(--card);border:1px solid var(--lineS);border-radius:6px;box-shadow:14px 16px 0 rgba(23,21,15,.05);overflow:hidden}
+  .reg-brand .gate .gt{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 18px;border-bottom:1px solid var(--line);background:#faf9f5}
+  .reg-brand .gate .gt .a{font-family:"Archivo";font-weight:700;font-size:15px}
+  .reg-brand .gate .gt .flow{font-size:12px;color:var(--sub)}.reg-brand .gate .gt .flow b{color:var(--ink)}
+  .reg-brand .gate .checks{padding:7px 18px}
+  .reg-brand .gate .ck{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+  .reg-brand .gate .ck:last-child{border-bottom:none}
+  .reg-brand .gate .ck .ic{flex:none;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff}
+  .reg-brand .gate .ck.ok .ic{background:var(--green)}.reg-brand .gate .ck.warn .ic{background:var(--amber)}
+  .reg-brand .gate .ck .lab{flex:1}.reg-brand .gate .ck .val{font-size:12.5px;color:var(--sub)}.reg-brand .gate .ck.warn .val{color:var(--amber);font-weight:600}
+  .reg-brand .gate .verdict{padding:15px 18px;background:var(--amberbg);border-top:1px solid var(--line);display:flex;align-items:center;gap:13px}
+  .reg-brand .gate .verdict .stamp{font-family:"Archivo";font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--amber);border:2px solid var(--amber);padding:5px 10px;border-radius:3px;transform:rotate(-2deg);white-space:nowrap}
+  .reg-brand .gate .verdict .vt{font-size:13px;color:var(--ink2);line-height:1.4}.reg-brand .gate .verdict .vt b{color:var(--ink)}
+  .reg-brand .sect{padding:54px 0;border-top:1px solid var(--line)}
+  .reg-brand h2.big{font-family:"Archivo";font-size:clamp(25px,3.2vw,36px);font-weight:800;letter-spacing:-.02em;line-height:1.1;margin-top:10px;max-width:19em}
+  .reg-brand .loop{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:30px}
+  .reg-brand .lc{background:var(--card);border:1px solid var(--line);border-radius:5px;padding:20px;border-top:3px solid var(--ox)}
+  .reg-brand .lc .n{font-family:"Archivo";font-weight:700;font-size:13px;color:var(--ox)}
+  .reg-brand .lc h3{font-family:"Archivo";font-size:18px;font-weight:700;margin-top:9px}
+  .reg-brand .lc p{font-size:14px;color:var(--sub);margin-top:8px;line-height:1.5}
+  .reg-brand .scenario{background:var(--ink);color:var(--paper);border-radius:6px;padding:32px 34px;margin-top:24px}
+  .reg-brand .scenario .sl{font-family:"Archivo";font-weight:600;font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:#c9a59f}
+  .reg-brand .scenario h3{font-family:"Archivo";font-size:clamp(20px,2.4vw,26px);font-weight:700;color:var(--paper);margin-top:12px;max-width:22em}
+  .reg-brand .sflow{display:flex;gap:0;margin-top:24px;flex-wrap:wrap}
+  .reg-brand .sstep{flex:1;min-width:150px;padding:16px 18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-right:none}
+  .reg-brand .sstep:last-child{border-right:1px solid rgba(255,255,255,.12)}
+  .reg-brand .sstep .k{font-size:12px;color:#a9a79c;font-family:"Archivo";font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+  .reg-brand .sstep .v{font-size:14px;margin-top:7px;color:#ECEBE3}
+  .reg-brand .sstep.stop{background:rgba(168,57,46,.22);border-color:rgba(200,120,110,.4)}.reg-brand .sstep.stop .k{color:#E9A79F}
+  .reg-brand .final{background:var(--ink);color:var(--paper)}
+  .reg-brand .final h2{color:var(--paper)}
+  .reg-brand .final p{font-size:18px;color:#c7c5ba;margin-top:16px;max-width:30em}
+  @media(max-width:820px){.reg-brand .hgrid{grid-template-columns:1fr;gap:36px}.reg-brand .loop{grid-template-columns:1fr 1fr}.reg-brand .sstep{border-right:1px solid rgba(255,255,255,.12);min-width:0}}
+
+  /* ===================================================== GOV (assurance + service) */
+  .reg-gov{--ink:#0b0c0c;--sub:#505a5f;--line:#b1b4b6;--lineL:#e7e7e3;--green:#00703c;--greenT:#005a30;--red:#d4351c;--redD:#942514;--amber:#594d00;background:#fff;color:var(--ink);line-height:1.35}
+  .reg-gov .lk{color:#1d70b8;text-decoration:underline;cursor:pointer}
+  .reg-gov .gm{background:#0b0c0c;color:#fff;padding:13px 24px;display:flex;align-items:center;gap:12px}
+  .reg-gov .gm .sq{width:26px;height:20px;background:#fff;position:relative;flex:none}.reg-gov .gm .sq::after{content:"";position:absolute;left:8px;top:5px;width:10px;height:10px;background:#0b0c0c}
+  .reg-gov .gm .nm{font-size:18px;font-weight:700}.reg-gov .gm .nm span{font-weight:400;color:#b1b4b6}
+  .reg-gov .gp{display:flex;gap:10px;align-items:flex-start;padding:11px 24px;border-bottom:1px solid var(--line);font-size:14px}
+  .reg-gov .tag{font-weight:700;font-size:13px;letter-spacing:.6px;text-transform:uppercase;padding:3px 8px;display:inline-block;white-space:nowrap}
+  .reg-gov .t-b{color:#144e81;background:#d2e2f1}.reg-gov .t-g{color:#005a30;background:#cce2d8}.reg-gov .t-y{color:#594d00;background:#fff7bf}.reg-gov .t-r{color:#942514;background:#f6d7d2}.reg-gov .t-grey{color:#383f43;background:#eeefef}
+  .reg-gov .mn{padding:28px 24px 34px;max-width:780px}
+  .reg-gov .crumb{font-size:14px;margin-bottom:10px}
+  .reg-gov .cap{font-size:16px;color:var(--sub);font-weight:700}
+  .reg-gov h1{font-size:30px;font-weight:700;line-height:1.1;margin:4px 0 0}
+  .reg-gov .lead{font-size:18px;margin:13px 0 0;line-height:1.5;max-width:42em}
+  .reg-gov .lead .ref{font-family:ui-monospace,'Courier New',monospace;font-weight:700;background:#f3f2f1;padding:1px 6px;border:1px solid var(--lineL)}
+  .reg-gov .inset{border-left:6px solid var(--line);padding:6px 0 6px 19px;margin:22px 0 0;font-size:17px;line-height:1.5}.reg-gov .inset b{font-weight:700}
+  .reg-gov .card{border:1px solid var(--line);margin-top:22px}
+  .reg-gov .ch{background:#f3f2f1;padding:13px 18px;border-bottom:1px solid var(--line);font-size:17px;font-weight:700}
+  .reg-gov .ch small{font-weight:400;color:var(--sub);font-size:14px;display:block;margin-top:2px}
+  .reg-gov .cb{padding:16px 18px}
+  .reg-gov .pl{font-size:13px;color:var(--sub);text-transform:uppercase;letter-spacing:.04em;margin:0 0 7px}
+  .reg-gov .perm{font-size:15.5px;padding:5px 0}
+  .reg-gov .btn{display:inline-block;font-size:16px;font-weight:700;color:#fff;background:var(--green);border:2px solid transparent;box-shadow:0 2px 0 #002d18;padding:10px 17px;cursor:pointer;margin:8px 8px 4px 0}
+  .reg-gov .btn:hover{background:#005a30}
+  .reg-gov .btn.sec{background:#f3f2f1;color:#0b0c0c;box-shadow:0 2px 0 #929191}.reg-gov .btn.sec:hover{background:#dbdad9}
+  .reg-gov .h2{font-size:21px;font-weight:700;margin:34px 0 0;padding-bottom:9px;border-bottom:3px solid #0b0c0c;display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+  .reg-gov .h2 .c{font-size:14px;font-weight:400;color:var(--sub)}
+  .reg-gov .grp{margin-top:16px}
+  .reg-gov .gt{font-size:14px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.03em}
+  .reg-gov .res{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--lineL);font-size:16px}
+  .reg-gov .res .mk{flex:none;font-weight:700;font-size:14px;width:54px}.reg-gov .res .mk.p{color:var(--greenT)}.reg-gov .res .mk.f{color:var(--redD)}
+  .reg-gov .res.fail{background:#fef4f3;margin:0 -8px;padding-left:8px;padding-right:8px}
+  .reg-gov .fx{font-size:14px;color:var(--sub);margin-top:6px;padding:10px 12px;background:#f3f2f1;border-left:4px solid var(--green)}.reg-gov .fx b{color:var(--ink)}
+  /* certificate */
+  .reg-gov .cert{border:3px solid #0b0c0c;margin-top:20px}
+  .reg-gov .cth{padding:18px 22px;border-bottom:1px solid var(--lineL);display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+  .reg-gov .cth .t{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--sub)}
+  .reg-gov .cth .nm{font-size:22px;font-weight:700;margin-top:3px}
+  .reg-gov .cth .ref{font-family:ui-monospace,'Courier New',monospace;font-size:15px;font-weight:700;background:#f3f2f1;padding:8px 12px;border:1px solid var(--line);white-space:nowrap}
+  .reg-gov .cmeta{padding:14px 22px;border-bottom:1px solid var(--lineL);font-size:14px;color:var(--sub);display:flex;flex-wrap:wrap;gap:6px 26px}.reg-gov .cmeta b{color:var(--ink);font-weight:700}
+  .reg-gov .split{display:grid;grid-template-columns:1fr 1fr}
+  .reg-gov .col{padding:18px 22px}.reg-gov .col.granted{background:#f2f8f4}.reg-gov .col.held{border-left:1px solid var(--lineL);background:#fbf3f2}
+  .reg-gov .cl{font-size:13px;letter-spacing:.04em;text-transform:uppercase;font-weight:700;margin-bottom:11px}
+  .reg-gov .col.granted .cl{color:var(--greenT)}.reg-gov .col.held .cl{color:var(--redD)}
+  .reg-gov .li{font-size:15.5px;padding:6px 0;display:flex;gap:9px;align-items:baseline}.reg-gov .li .m{flex:none;font-weight:700}
+  .reg-gov .col.granted .li .m{color:var(--greenT)}.reg-gov .col.held .li{color:var(--sub)}.reg-gov .col.held .li .m{color:var(--redD)}
+  .reg-gov .ceil{padding:16px 22px;border-top:1px solid var(--lineL);display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+  .reg-gov .ceil .lvl{font-size:18px;font-weight:700}.reg-gov .ceil .lvl small{display:block;font-size:13px;color:var(--sub);font-weight:400}
+  .reg-gov .status{font-size:15px;font-weight:700;color:var(--greenT)}
+  .reg-gov .narrow{margin-top:20px;background:#f3f2f1;padding:16px 18px;font-size:15px;line-height:1.5}.reg-gov .narrow b{font-weight:700}
+  .reg-gov .narrow .row{margin-top:7px}.reg-gov .narrow .k{display:inline-block;width:96px;color:var(--sub)}.reg-gov .narrow .strike{text-decoration:line-through;color:var(--sub)}
+  /* gate */
+  .reg-gov .chk{display:flex;align-items:flex-start;gap:13px;padding:14px 0;border-bottom:1px solid var(--lineL);font-size:16px}
+  .reg-gov .chk .mk{flex:none;font-weight:700;color:var(--greenT);width:20px;text-align:center;font-size:16px}
+  .reg-gov .chk .tx b{font-weight:700}.reg-gov .chk .tx .d{color:var(--sub);font-size:14px;margin-top:2px}
+  .reg-gov .chk .rt{margin-left:auto;font-family:ui-monospace,'Courier New',monospace;font-size:13px;color:var(--sub);white-space:nowrap;padding-left:12px}
+  .reg-gov .verdict{border:3px solid var(--green);margin-top:24px}
+  .reg-gov .vh{background:#f2f8f4;padding:16px 20px;border-bottom:1px solid #cce2d8;display:flex;align-items:center;gap:12px}
+  .reg-gov .vh .tag{color:#fff;background:var(--green);letter-spacing:.5px}
+  .reg-gov .vh .t{font-size:19px;font-weight:700;color:var(--greenT)}
+  .reg-gov .vb{padding:16px 20px;font-size:16px;line-height:1.5}.reg-gov .vb .lim{color:var(--redD);font-weight:700}
+  /* service screens */
+  .reg-gov .item{padding:20px 0;border-bottom:1px solid var(--line)}
+  .reg-gov .itop{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+  .reg-gov .itop .lk{font-size:18px;font-weight:700}
+  .reg-gov .meta{font-size:15px;color:var(--sub);margin-top:3px}
+  .reg-gov .warn{display:flex;gap:12px;align-items:flex-start;margin:14px 0 0}
+  .reg-gov .warn .ico{flex:none;width:32px;height:32px;border-radius:50%;background:#0b0c0c;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:20px}
+  .reg-gov .warn .tx{font-weight:700;font-size:16px;line-height:1.35;padding-top:3px}
+  .reg-gov .rsn{font-size:16px;margin:13px 0 0;line-height:1.5}
+  .reg-gov .src{font-size:15px;margin:12px 0 0;line-height:1.5}.reg-gov .src .l{font-weight:700}
+  .reg-gov .sl{margin:14px 0 0;border-top:1px solid var(--line);max-width:32em}
+  .reg-gov .sl .r{display:flex;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}.reg-gov .sl .k{width:140px;color:var(--sub);flex:none}.reg-gov .sl .vv{font-weight:700}
+  .reg-gov .draft{border:2px solid #0b0c0c;padding:14px 16px;margin-top:8px;font-size:16px;line-height:1.6}
+  .reg-gov .clear{background:#f3f2f1;padding:18px 20px;margin-top:18px}.reg-gov .clear .t{font-size:17px;font-weight:700}.reg-gov .clear .d{font-size:15px;color:var(--sub);margin-top:4px}
+  .reg-gov .certline{font-family:ui-monospace,'Courier New',monospace;font-size:13px;color:var(--sub);margin-top:14px;padding:10px 12px;background:#f3f2f1;border-left:4px solid #0b0c0c}
+  .reg-gov .det{margin-top:24px;font-size:16px}.reg-gov .det summary{color:#1d70b8;text-decoration:underline;cursor:pointer}.reg-gov .det p{margin-top:10px;line-height:1.55;border-left:6px solid var(--line);padding-left:18px;max-width:42em}
+  .reg-gov .nav2{margin-top:28px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  @media(max-width:560px){.reg-gov .split{grid-template-columns:1fr}.reg-gov .col.held{border-left:none;border-top:1px solid var(--lineL)}.reg-gov .res .mk{width:auto}}
+
+  /* ===================================================== PROOF PACK (records, clean light) */
+  .reg-pp{--ink:#1b1b19;--sub:#6f6f69;--line:#e7e7e2;--lineD:#cfcfc8;--green:#1a7a52;--greenbg:#eef6f1;--amber:#9a6b1e;--amberbg:#fbf4e6;--red:#a23a30;--redbg:#fbf2f1;background:#fff;color:var(--ink);line-height:1.5}
+  .reg-pp .wrap{max-width:800px;margin:0 auto;padding:30px 36px 36px}
+  .reg-pp .verify{display:flex;align-items:flex-start;gap:12px;background:var(--greenbg);border:1px solid #cfe6da;border-radius:6px;padding:14px 16px}
+  .reg-pp .verify .m{flex:none;width:26px;height:26px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+  .reg-pp .verify .t{font-size:15px;font-weight:600;color:var(--green)}
+  .reg-pp .verify .d{font-size:13.5px;color:#3f5a4e;margin-top:2px}
+  .reg-pp .head{margin-top:24px;display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+  .reg-pp .kick{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--sub)}
+  .reg-pp h1{font-size:25px;font-weight:600;letter-spacing:-.015em;margin-top:5px}
+  .reg-pp .ref{font-family:ui-monospace,'Courier New',monospace;font-size:13px;font-weight:600;color:var(--sub);background:#f6f6f2;border:1px solid var(--line);border-radius:3px;padding:7px 11px;white-space:nowrap}
+  .reg-pp .sec{margin-top:28px}
+  .reg-pp .sn{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--sub);font-weight:600}
+  .reg-pp .sh{font-size:17px;font-weight:600;letter-spacing:-.01em;margin:5px 0 0}
+  .reg-pp p.body{font-size:15.5px;margin-top:9px;line-height:1.55}
+  .reg-pp .why{margin-top:10px;border-left:3px solid var(--amber);background:var(--amberbg);padding:12px 15px;border-radius:0 4px 4px 0;font-size:14.5px;line-height:1.5}
+  .reg-pp .why b{font-weight:600}
+  .reg-pp table{width:100%;border-collapse:collapse;margin-top:12px;font-size:14.5px}
+  .reg-pp th{text-align:left;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--sub);font-weight:600;padding:0 10px 8px 0;border-bottom:1px solid var(--lineD)}
+  .reg-pp td{padding:10px 10px 10px 0;border-bottom:1px solid var(--line);vertical-align:top}
+  .reg-pp td:last-child,.reg-pp th:last-child{text-align:right;padding-right:0}
+  .reg-pp .owner{font-weight:600}.reg-pp .owner.svc{color:var(--sub)}.reg-pp .owner.off{color:var(--green)}
+  .reg-pp .trace{margin-top:12px}
+  .reg-pp .tr{display:flex;gap:13px;align-items:flex-start}
+  .reg-pp .tr .rail{display:flex;flex-direction:column;align-items:center;flex:none}
+  .reg-pp .tr .dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+  .reg-pp .tr.svc .dot{background:#6f6f69}.reg-pp .tr.edit .dot{background:var(--amber)}.reg-pp .tr.appr .dot{background:var(--green)}
+  .reg-pp .tr .line{width:2px;flex:1;min-height:14px;background:var(--line)}
+  .reg-pp .tr .c{padding-bottom:14px}
+  .reg-pp .tr .ct{font-size:14.5px;font-weight:600}.reg-pp .tr .cm{font-size:12.5px;color:var(--sub);margin-top:1px}
+  .reg-pp .diff{margin-top:12px;border:1px solid var(--lineD);border-radius:5px;overflow:hidden}
+  .reg-pp .diff .dh{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--sub);padding:9px 14px;border-bottom:1px solid var(--line);background:#faf9f6}
+  .reg-pp .diff .db{padding:14px;font-size:15px;line-height:1.7}
+  .reg-pp .del{color:var(--red);text-decoration:line-through;text-decoration-thickness:1px}
+  .reg-pp .ins{color:var(--green);background:var(--greenbg);border-radius:2px;padding:0 3px}
+  .reg-pp .diffnote{font-size:13px;color:var(--sub);margin-top:9px}
+  .reg-pp .src{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+  .reg-pp .src .meta{color:var(--sub);font-size:13px}
+  .reg-pp .pill{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:2px 7px;border-radius:2px;white-space:nowrap}
+  .reg-pp .p-strong{background:var(--greenbg);color:var(--green)}.reg-pp .p-missing{background:var(--redbg);color:var(--red)}.reg-pp .p-mask{background:var(--amberbg);color:var(--amber)}.reg-pp .p-deny{background:#efefea;color:var(--sub)}
+  .reg-pp .withheld{margin-top:12px;border:1px solid var(--lineD);border-radius:5px;padding:13px 15px;font-size:14px;line-height:1.5}.reg-pp .withheld b{font-weight:600}
+  .reg-pp .gov{display:flex;flex-wrap:wrap;gap:8px 28px;margin-top:12px;font-size:14px}.reg-pp .gov .k{color:var(--sub)}.reg-pp .gov .v{font-weight:600}.reg-pp .gov .v.mono{font-family:ui-monospace,'Courier New',monospace;font-size:13px}
+  .reg-pp details{margin-top:12px;font-size:14px}.reg-pp summary{color:#1b5e8a;cursor:pointer;font-size:14px}
+  .reg-pp details .inner{margin-top:10px;border-left:3px solid var(--line);padding-left:16px;font-family:ui-monospace,'Courier New',monospace;font-size:12.5px;color:var(--sub);line-height:1.8}
+  .reg-pp .wow{margin-top:26px;background:#1b1b19;color:#fafaf7;border-radius:6px;padding:18px 20px;font-size:16px;line-height:1.5;font-weight:500}
+  .reg-pp .acts{margin-top:22px;display:flex;gap:11px;flex-wrap:wrap;align-items:center}
+  .reg-pp .btn{font-size:15px;font-weight:600;padding:10px 17px;border-radius:4px;border:1px solid var(--ink);background:var(--ink);color:#fff;cursor:pointer}
+  .reg-pp .btn.sec{background:#fff;color:var(--ink);font-weight:500}
+  .reg-pp .lk{color:#1b5e8a;text-decoration:underline;cursor:pointer;font-size:14px}
+
+  /* ===================================================== MASKING (sensitive data, clean light) */
+  .reg-mask{--ink:#1b1b19;--sub:#6f6f69;--line:#e7e7e2;--lineD:#cfcfc8;--green:#1a7a52;--greenbg:#eef6f1;--amber:#9a6b1e;--amberbg:#fbf4e6;--red:#a23a30;--redbg:#fbf2f1;background:#fff;color:var(--ink);line-height:1.45}
+  .reg-mask .wrap{max-width:780px;margin:0 auto;padding:30px 36px 36px}
+  .reg-mask .kick{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--sub)}
+  .reg-mask h1{font-size:25px;font-weight:600;letter-spacing:-.015em;margin-top:5px}
+  .reg-mask .lead{font-size:16px;color:var(--sub);margin:11px 0 0;line-height:1.5;max-width:44em}
+  .reg-mask .two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px}
+  .reg-mask .col{border:1px solid var(--lineD);border-radius:5px;overflow:hidden}
+  .reg-mask .colh{padding:11px 15px;font-size:13px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;border-bottom:1px solid var(--line)}
+  .reg-mask .col.officer .colh{background:var(--greenbg);color:var(--green)}
+  .reg-mask .col.agent .colh{background:#f6f6f2;color:var(--ink)}
+  .reg-mask .row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 15px;border-bottom:1px solid var(--line);font-size:14.5px}
+  .reg-mask .row:last-child{border-bottom:none}
+  .reg-mask .row .f{color:var(--sub)}.reg-mask .row .v{font-weight:600;text-align:right}
+  .reg-mask .redact{display:inline-block;background:#1b1b19;color:#1b1b19;border-radius:2px;padding:0 2px;letter-spacing:1px;user-select:none}
+  .reg-mask .pill{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:2px}
+  .reg-mask .p-a{background:var(--amberbg);color:var(--amber)}.reg-mask .p-d{background:var(--redbg);color:var(--red)}
+  .reg-mask .note{font-size:13.5px;color:var(--sub);margin-top:18px;line-height:1.5;border-left:3px solid var(--ink);padding-left:14px}.reg-mask .note b{color:var(--ink)}
+  .reg-mask .rule{margin-top:18px;background:#f6f6f2;border:1px solid var(--line);border-radius:5px;padding:14px 16px;font-size:14px;line-height:1.5}.reg-mask .rule b{font-weight:700}
+  .reg-mask .lk{color:#1b5e8a;text-decoration:underline;cursor:pointer;font-size:14px;display:inline-block;margin-top:22px}
+  @media(max-width:580px){.reg-mask .two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="shell"><div class="shell-row">
+  <div class="shell-brand"><b>SwarmSight</b> · connected demo</div>
+  <div class="shell-nav">
+    <span class="grp">Front door</span>
+    <button class="tabb on" data-t="landing">Landing</button>
+    <span class="grp">Assurance</span>
+    <button class="tabb" data-t="check">Check agent</button>
+    <button class="tabb" data-t="results">Test results</button>
+    <button class="tabb" data-t="certificate">Certificate</button>
+    <button class="tabb" data-t="gate">Go-live check</button>
+    <span class="grp">The service</span>
+    <button class="tabb" data-t="officer">Officer</button>
+    <button class="tabb" data-t="case">Case</button>
+    <button class="tabb" data-t="masking">Sensitive data</button>
+    <span class="grp">Audit</span>
+    <button class="tabb" data-t="audit">Proof pack</button>
+  </div>
+</div></div>
+
+<div class="frame">
+
+<!-- ===== LANDING ===== -->
+<section class="screen on reg-brand" id="landing">
+  <div class="hero"><div class="wrap hgrid">
+    <div>
+      <span class="eyebrow">Agent assurance for government</span>
+      <h1>Move government AI agents from pilot to supervised live service.</h1>
+      <p class="lede">SwarmSight checks the agent, the source documents, the policy, and the action before anything reaches a citizen, a record, or a system.</p>
+      <div class="ctas"><span class="btn ox" data-t="check">Run an assurance check</span><span class="btn out" data-t="officer">See the supervised workflow</span></div>
+      <div class="micro"><span class="dot"></span>Nothing is sent without an officer.</div>
+    </div>
+    <div class="gate">
+      <div class="gt"><span class="a">Housing appeals agent v3</span><span class="flow">sandbox <b>→ supervised live</b></span></div>
+      <div class="checks">
+        <div class="ck ok"><span class="ic">✓</span><span class="lab">Agent certificate</span><span class="val">passed, L2</span></div>
+        <div class="ck warn"><span class="ic">!</span><span class="lab">Source documents</span><span class="val">78%, below threshold</span></div>
+        <div class="ck ok"><span class="ic">✓</span><span class="lab">Policy bound</span><span class="val">HA-09 v7</span></div>
+        <div class="ck ok"><span class="ic">✓</span><span class="lab">Human judgement rule</span><span class="val">active</span></div>
+      </div>
+      <div class="verdict"><span class="stamp">Promotion held</span><span class="vt"><b>Sources below the readiness threshold.</b> Clear the sources, or promote for L2 actions only.</span></div>
+    </div>
+  </div></div>
+
+  <div class="sect"><div class="wrap">
+    <span class="eyebrow">How it works</span>
+    <h2 class="big">Check before go-live. Control during work. Prove afterwards.</h2>
+    <div class="loop">
+      <div class="lc"><div class="n">01</div><h3>Test the agent</h3><p>Run it against realistic cases in an arena. It earns a certificate that says exactly what it may do.</p></div>
+      <div class="lc"><div class="n">02</div><h3>Certify the sources</h3><p>Check documents are current and permissioned. Unsafe sources are blocked before an agent can cite them.</p></div>
+      <div class="lc"><div class="n">03</div><h3>Control the action</h3><p>Every action returns one plain verdict: allowed, masked, held for an officer, or blocked.</p></div>
+      <div class="lc"><div class="n">04</div><h3>Prove the decision</h3><p>Source, policy version, the draft, the human edit, and the approver are sealed in a verifiable trail.</p></div>
+    </div>
+  </div></div>
+
+  <div class="sect"><div class="wrap">
+    <span class="eyebrow">One scenario</span>
+    <h2 class="big">A housing appeal, prepared and held at the right line.</h2>
+    <div class="scenario">
+      <div class="sl">Housing appeals agent v3, in live supervised service</div>
+      <h3>The agent prepares the response. SwarmSight catches the missing eviction evidence and holds the final send for an officer.</h3>
+      <div class="sflow">
+        <div class="sstep"><div class="k">Prepares</div><div class="v">Reads the file, drafts a response, sets out the evidence.</div></div>
+        <div class="sstep"><div class="k">Catches</div><div class="v">Eviction risk with dependent children, eviction notice missing.</div></div>
+        <div class="sstep stop"><div class="k">Holds</div><div class="v">Final send is stopped. Sent to an officer with the evidence.</div></div>
+        <div class="sstep"><div class="k">Decides</div><div class="v">The officer edits, approves, and sends. Recorded.</div></div>
+      </div>
+    </div>
+  </div></div>
+
+  <div class="sect final"><div class="wrap">
+    <span class="eyebrow" style="color:#E9A79F">Get started</span>
+    <h2 class="big">Start in shadow mode. Prove the safe slice. Turn on only the low-risk parts.</h2>
+    <p>Keep humans in charge of judgement, and prove every step.</p>
+    <div class="ctas" style="margin-top:24px"><span class="btn light" data-t="check">Run an assurance check</span></div>
+  </div></div>
+</section>
+
+<!-- ===== CHECK AGENT ===== -->
+<section class="screen reg-gov" id="check">
+  <div class="gm"><span class="sq"></span><span class="nm">SwarmSight <span>· Agent assurance</span></span></div>
+  <div class="gp"><span class="tag t-b">Beta</span><span>This assurance result is for a supervised trial. Final deployment needs service-owner approval.</span></div>
+  <div class="mn">
+    <div class="cap">Step 1 of 4 · Check agent</div>
+    <h1>Is this agent safe to use in a live service?</h1>
+    <p class="lead">Before it goes near real casework, the agent is tested against realistic cases, your policy, and your documents.</p>
+    <div class="card">
+      <div class="ch">Housing appeals agent <span style="color:#505a5f;font-weight:400">v3</span><small>Requested use: prepare housing appeal responses · Environment: gov-uk-prod</small></div>
+      <div class="cb">
+        <div class="pl">Permissions it is asking for</div>
+        <div class="perm">Read case documents</div>
+        <div class="perm">Summarise the appeal</div>
+        <div class="perm">Request missing evidence</div>
+        <div class="perm">Draft a citizen response</div>
+        <div class="perm">Send a citizen-facing response</div>
+        <span class="btn" data-t="results">Run assurance check</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== TEST RESULTS ===== -->
+<section class="screen reg-gov" id="results">
+  <div class="gm"><span class="sq"></span><span class="nm">SwarmSight <span>· Agent assurance</span></span></div>
+  <div class="gp"><span class="tag t-b">Beta</span><span>Supervised trial assurance result.</span></div>
+  <div class="mn">
+    <div class="cap">Step 2 of 4 · Review test results</div>
+    <h1>Tested against 42 supervised scenarios</h1>
+    <div class="grp"><div class="gt">Documents and sources</div>
+      <div class="res"><span class="mk p">Passed</span><span>Used current policy, not the superseded version</span></div>
+      <div class="res"><span class="mk p">Passed</span><span>Withheld sensitive fields from drafts</span></div>
+      <div class="res"><span class="mk p">Passed</span><span>Refused an overshared source for a citizen decision</span></div>
+    </div>
+    <div class="grp"><div class="gt">Case judgement</div>
+      <div class="res"><span class="mk p">Passed</span><span>Escalated eviction risk with dependent children</span></div>
+      <div class="res"><span class="mk p">Passed</span><span>Asked for missing evidence instead of guessing</span></div>
+      <div class="res"><span class="mk p">Passed</span><span>Did not close a case on its own</span></div>
+    </div>
+    <div class="grp"><div class="gt">Citizen-facing actions</div>
+      <div class="res fail"><span class="mk f">Failed</span><span>Tried to send an adverse decision</span></div>
+      <div class="fx"><b>Correctly stopped.</b> Sending a decision to a citizen requires an officer. This is meant to fail, and the agent will not be certified for it.</div>
+    </div>
+    <div class="nav2"><span class="lk" data-t="check">← Back</span><span class="btn" data-t="certificate">See certificate</span></div>
+  </div>
+</section>
+
+<!-- ===== CERTIFICATE ===== -->
+<section class="screen reg-gov" id="certificate">
+  <div class="gm"><span class="sq"></span><span class="nm">SwarmSight <span>· Agent assurance</span></span></div>
+  <div class="gp"><span class="tag t-g">Certificate issued</span><span style="align-self:center">Step 3 of 4 · Issue certificate</span></div>
+  <div class="mn">
+    <div class="cap">Result</div>
+    <h1>Certificate issued</h1>
+    <div class="cert">
+      <div class="cth"><div><div class="t">Agent assured for live service</div><div class="nm">Housing appeals agent v3</div></div><div class="ref">SWS-CERT-HX-V3-0047</div></div>
+      <div class="cmeta"><span>Assessed: <b>28 June 2026</b></span><span>Policy set: <b>HA-09 v7</b></span><span>Sources: <b>Housing Policy Library v7</b></span><span>Review by: <b>28 Sep 2026</b></span></div>
+      <div class="split">
+        <div class="col granted"><div class="cl">Certified to</div>
+          <div class="li"><span class="m">✓</span>Read and summarise case documents</div>
+          <div class="li"><span class="m">✓</span>Identify missing evidence</div>
+          <div class="li"><span class="m">✓</span>Request missing documents</div>
+          <div class="li"><span class="m">✓</span>Draft citizen responses</div>
+        </div>
+        <div class="col held"><div class="cl">Not certified to</div>
+          <div class="li"><span class="m">✕</span>Send adverse citizen decisions</div>
+          <div class="li"><span class="m">✕</span>Close housing appeal cases</div>
+          <div class="li"><span class="m">✕</span>Release sensitive records</div>
+          <div class="li"><span class="m">✕</span>Use uncertified policy sources</div>
+        </div>
+      </div>
+      <div class="ceil"><span class="lvl">Approved ceiling: L2 <small>low-risk action</small></span><span class="status">Ready for supervised live trial</span></div>
+    </div>
+    <div class="narrow"><b>The agent asked for broad permission. Assurance granted only the safe slice.</b>
+      <div class="row"><span class="k">Requested</span> draft · request documents · <span class="strike">send response</span> · <span class="strike">close case</span></div>
+      <div class="row"><span class="k">Granted</span> <b>draft · request documents</b></div>
+      <div class="row"><span class="k">Held back</span> <span class="strike">send response · close case</span>, officer only</div>
+    </div>
+    <div class="nav2"><span class="lk" data-t="results">← Back</span><span class="btn" data-t="gate">Apply certificate to deployment gate</span></div>
+  </div>
+</section>
+
+<!-- ===== GATE ===== -->
+<section class="screen reg-gov" id="gate">
+  <div class="gm"><span class="sq"></span><span class="nm">SwarmSight <span>· Agent assurance</span></span></div>
+  <div class="gp"><span class="tag t-b">Beta</span><span>Supervised trial. Final go-live needs service-owner approval.</span></div>
+  <div class="mn">
+    <div class="cap">Step 4 of 4 · Approve supervised trial</div>
+    <h1>Go-live check</h1>
+    <p class="lead">Promotion request: <b>housing appeals agent v3</b> → live, under certificate <span class="ref">SWS-CERT-HX-V3-0047</span>.</p>
+    <div class="h2">Checks</div>
+    <div class="chk"><span class="mk">✓</span><span class="tx"><b>Certificate valid</b><div class="d">Issued 28 June 2026, review by 28 Sep 2026</div></span><span class="rt">SWS-CERT-HX-V3-0047</span></div>
+    <div class="chk"><span class="mk">✓</span><span class="tx"><b>Policy bound</b><div class="d">Judged under the version in force today</div></span><span class="rt">HA-09 v7</span></div>
+    <div class="chk"><span class="mk">✓</span><span class="tx"><b>Document sources ready</b><div class="d">Above the 85% readiness threshold</div></span><span class="rt">86%</span></div>
+    <div class="chk"><span class="mk">✓</span><span class="tx"><b>Connections healthy</b><div class="d">Case system, document store, policy library</div></span><span class="rt">healthy</span></div>
+    <div class="chk"><span class="mk">✓</span><span class="tx"><b>Human-judgement rule active</b><div class="d">Citizen decisions and case closures stay with officers</div></span><span class="rt">active</span></div>
+    <div class="verdict">
+      <div class="vh"><span class="tag">Allowed</span><span class="t">Promotion allowed for L2 actions only</span></div>
+      <div class="vb">The agent may prepare summaries, request documents, and draft responses in live service. <span class="lim">Sending citizen decisions, closing cases, and releasing records remain officer-only.</span></div>
+    </div>
+    <div class="nav2"><span class="lk" data-t="certificate">← Back</span><span class="btn" data-t="officer">Promote to supervised live</span></div>
+  </div>
+</section>
+
+<!-- ===== OFFICER ===== -->
+<section class="screen reg-gov" id="officer">
+  <div class="gm"><span class="sq"></span><span class="nm">SwarmSight <span>· Housing appeals</span></span></div>
+  <div class="gp"><span class="tag t-b">Beta</span><span>This service is in a supervised trial. Nothing is sent without an officer.</span></div>
+  <div class="mn">
+    <div class="cap">J. Okafor, your cases</div>
+    <h1>Cases for review</h1>
+    <p class="lead">12 cases have been prepared and checked against policy. <b>3 need your judgement</b>, 5 are waiting for evidence, and 4 are low-risk and ready for checking.</p>
+    <div class="inset"><b>You make every decision that affects a citizen.</b> The service prepares evidence and drafts and checks them against policy. It cannot send a decision, close a case, or release records on its own.</div>
+    <div class="h2">For review <span class="c">3 cases</span></div>
+    <div class="item">
+      <div class="itop"><span class="lk" data-t="case">HX-4471, housing appeal</span><span class="tag t-y">For review</span></div>
+      <div class="meta">Appeal response prepared</div>
+      <div class="warn"><span class="ico">!</span><span class="tx">Involves eviction risk and dependent children. This decision needs an officer.</span></div>
+      <p class="src"><span class="l">Sources checked:</span> income document, tenancy record, Housing Appeals Policy HA-09 v7. <b>Missing:</b> latest eviction notice.</p>
+      <span class="btn" data-t="case">Open case</span>
+    </div>
+    <div class="item">
+      <div class="itop"><span class="lk">FOI-2231, information request</span><span class="tag t-y">For review</span></div>
+      <div class="meta">Possible exemption to apply</div>
+      <p class="rsn">The response may contain personal data that needs an exemption decision.</p>
+    </div>
+    <div class="h2">Low-risk, ready for checking <span class="c">4 cases</span></div>
+    <div class="clear"><div class="t">None of these affect a citizen decision.</div><div class="d">4 document requests and summaries, prepared and checked against policy.</div><span class="btn" style="margin-top:14px">Check each one first</span> <span style="font-size:14px;color:#505a5f">Automatic sending is off during the supervised trial.</span></div>
+  </div>
+</section>
+
+<!-- ===== CASE ===== -->
+<section class="screen reg-gov" id="case">
+  <div class="gm"><span class="sq"></span><span class="nm">SwarmSight <span>· Housing appeals</span></span></div>
+  <div class="gp"><span class="tag t-b">Beta</span><span>Supervised trial. You make the decision.</span></div>
+  <div class="mn">
+    <div class="crumb"><span class="lk" data-t="officer">Cases for review</span> › HX-4471</div>
+    <h1>HX-4471, housing appeal</h1>
+    <div class="warn" style="margin-top:16px"><span class="ico">!</span><span class="tx">Involves eviction risk and dependent children. This decision needs an officer.</span></div>
+    <p class="lead">For your review because the case mentions eviction risk and dependent children, and the evidence is incomplete, under Housing Appeals Policy HA-09, section 4.</p>
+    <div class="h2">Evidence</div>
+    <p class="src" style="margin-top:14px"><span class="l">Income above threshold</span>, assessment.pdf p.3 · <b>strong</b></p>
+    <p class="src"><span class="l">Current tenancy confirmed</span>, tenancy record · <b>strong</b></p>
+    <p class="src"><span class="l">Latest eviction notice</span> · <b>missing</b></p>
+    <p class="src" style="color:#505a5f"><span class="l">Withheld from the AI:</span> medical notes, National Insurance number.</p>
+    <div class="h2">Prepared response <span class="c">draft, you can edit</span></div>
+    <div class="draft">Dear Ms Adeyemi, thank you for your appeal regarding your housing application. Having reviewed your income and tenancy documents, I am writing to confirm the next steps in your case…</div>
+    <div class="sl">
+      <div class="r"><span class="k">Decision</span><span class="vv">You</span></div>
+      <div class="r"><span class="k">The service did</span><span class="vv">Prepared evidence and a draft</span></div>
+    </div>
+    <div class="certline">Prepared under certificate SWS-CERT-HX-V3-0047 · policy HA-09 v7. The service is certified to draft, not to send.</div>
+    <div style="margin-top:8px"><span class="btn">Accept and send</span><span class="btn sec">Edit draft</span><span class="btn sec">Request evidence</span><span class="btn sec">Escalate to senior</span></div>
+    <div class="nav2"><span class="lk" data-t="officer">← Back to cases</span><span style="display:flex;gap:18px"><span class="lk" data-t="masking">What the agent could see</span><span class="lk" data-t="audit">See the full record →</span></span></div>
+  </div>
+</section>
+
+<!-- ===== AUDIT / PROOF PACK ===== -->
+<section class="screen reg-pp" id="audit">
+  <div class="wrap">
+    <div class="verify"><span class="m">✓</span><div><div class="t">Record verified</div><div class="d">No breaks in the audit chain. External seal recorded 09:00 UTC.</div></div></div>
+    <div class="head"><div><div class="kick">Proof pack</div><h1>Housing appeal HX-4471</h1></div><div class="ref">SWS-CERT-HX-V3-0047</div></div>
+
+    <div class="sec"><div class="sn">1 · What happened</div>
+      <p class="body">The service prepared a draft response for housing appeal HX-4471 and set out the evidence. Officer J. Okafor edited the wording and approved the final response. The service did not send, close, or decide the case.</p></div>
+
+    <div class="sec"><div class="sn">2 · Why officer review was required</div>
+      <div class="why"><b>Eviction risk and dependent children</b> were detected, and the latest eviction notice was missing. Policy HA-09 v7 requires officer judgement for adverse housing outcomes.</div></div>
+
+    <div class="sec"><div class="sn">3 · Decision responsibility</div>
+      <table>
+        <tr><th>Item</th><th>Owner</th></tr>
+        <tr><td>Evidence prepared</td><td><span class="owner svc">Service</span></td></tr>
+        <tr><td>Draft authored</td><td><span class="owner svc">Service</span></td></tr>
+        <tr><td>Final wording</td><td><span class="owner off">Officer</span></td></tr>
+        <tr><td>Decision approved</td><td><span class="owner off">Officer</span></td></tr>
+        <tr><td>Policy applied</td><td><span class="owner">HA-09 v7</span></td></tr>
+      </table></div>
+
+    <div class="sec"><div class="sn">4 · Decision trace</div>
+      <div class="trace">
+        <div class="tr svc"><div class="rail"><div class="dot">A</div><div class="line"></div></div><div class="c"><div class="ct">Service drafted the citizen letter</div><div class="cm">housing-appeals-agent v3 · 09:14</div></div></div>
+        <div class="tr edit"><div class="rail"><div class="dot">✎</div><div class="line"></div></div><div class="c"><div class="ct">Officer edited the draft</div><div class="cm">J. Okafor · 09:21</div></div></div>
+        <div class="tr appr"><div class="rail"><div class="dot">✓</div></div><div class="c"><div class="ct">Officer approved the decision</div><div class="cm">J. Okafor · 09:22</div></div></div>
+      </div></div>
+
+    <div class="sec"><div class="sn">5 · Where human judgement entered</div>
+      <div class="diff"><div class="dh">Agent draft → officer final</div><div class="db">…I am writing to <span class="del">inform you that your application has been refused.</span> <span class="ins">confirm the next steps in your case, and set out how you can appeal.</span></div></div>
+      <div class="diffnote">The officer softened the refusal wording and added appeals signposting. This is the record of discretion applied.</div></div>
+
+    <div class="sec"><div class="sn">6 · Sources and access</div>
+      <div class="src"><span>assessment.pdf, p.3 <span class="meta">income evidence</span></span><span class="pill p-strong">strong</span></div>
+      <div class="src"><span>tenancy record <span class="meta">tenancy confirmed</span></span><span class="pill p-strong">strong</span></div>
+      <div class="src"><span>latest eviction notice <span class="meta">required</span></span><span class="pill p-missing">missing</span></div>
+      <div class="withheld"><b>Withheld from the service:</b> National Insurance number <span class="pill p-mask">masked</span> &nbsp; medical notes <span class="pill p-deny">no access</span><br><span style="color:#6f6f69">Reason: not required for this draft. Sensitive field policy applied. The service could not read what it was not given.</span> &nbsp;<span class="lk" data-t="masking">See what the agent could access</span></div></div>
+
+    <div class="sec"><div class="sn">7 · Governing rules</div>
+      <div class="gov"><span><span class="k">Certificate</span> <span class="v mono">SWS-CERT-HX-V3-0047</span></span><span><span class="k">Policy</span> <span class="v">HA-09 v7</span></span><span><span class="k">Officer</span> <span class="v">J. Okafor</span></span><span><span class="k">Decided</span> <span class="v">28 Jun 2026, 09:22</span></span></div>
+      <details><summary>Show technical verification</summary><div class="inner">ledger entries: 1,247 · no gaps<br>draft hash: a47f…c12<br>edit hash: 9f2c…8e1 · prev a47f…c12<br>approve hash: 5b1e…e90 · prev 9f2c…8e1<br>Merkle root: 7c4d…f019<br>external anchor: 09:00 UTC · export hash on download</div></details></div>
+
+    <div class="wow">This record proves the service prepared the work, but the officer made the decision.</div>
+    <div class="acts"><button class="btn">Export proof pack</button><button class="btn sec">Copy FOI summary</button><span class="lk" data-t="case" style="margin-left:auto">← Back to case</span></div>
+  </div>
+</section>
+
+<!-- ===== MASKING / SENSITIVE DATA ===== -->
+<section class="screen reg-mask" id="masking">
+  <div class="wrap">
+    <div class="kick">Case HX-4471 · sensitive data</div>
+    <h1>What the agent is allowed to see</h1>
+    <p class="lead">Sensitive fields are masked at the boundary, before the record reaches the agent. The agent cannot leak what it never received.</p>
+    <div class="two">
+      <div class="col officer"><div class="colh">The officer sees</div>
+        <div class="row"><span class="f">Applicant name</span><span class="v">Ms A. Adeyemi</span></div>
+        <div class="row"><span class="f">Income</span><span class="v">£18,400</span></div>
+        <div class="row"><span class="f">Tenancy</span><span class="v">Confirmed</span></div>
+        <div class="row"><span class="f">National Insurance</span><span class="v">QQ 12 34 56 C</span></div>
+        <div class="row"><span class="f">Medical notes</span><span class="v">Disability, mobility</span></div>
+      </div>
+      <div class="col agent"><div class="colh">The agent receives</div>
+        <div class="row"><span class="f">Applicant name</span><span class="v">Ms A. Adeyemi</span></div>
+        <div class="row"><span class="f">Income</span><span class="v">£18,400</span></div>
+        <div class="row"><span class="f">Tenancy</span><span class="v">Confirmed</span></div>
+        <div class="row"><span class="f">National Insurance</span><span class="v"><span class="redact">XXXXXXXXX</span> <span class="pill p-a">masked</span></span></div>
+        <div class="row"><span class="f">Medical notes</span><span class="v"><span class="pill p-d">no access</span></span></div>
+      </div>
+    </div>
+    <div class="note"><b>Masked</b> means the agent knows a field exists but not its value. <b>No access</b> means the field is removed entirely, the agent never knows it was there.</div>
+    <div class="rule"><b>How it is decided:</b> a field reaches the agent only if the source's own permissions allow it <b>and</b> the department's sensitivity policy permits it at the agent's clearance. Both must agree. Every mask is recorded, so an auditor can prove the data was never exposed.</div>
+    <span class="lk" data-t="case">← Back to case</span>
+  </div>
+</section>
+
+</div>
+
+<script>
+  var screens=document.querySelectorAll('.screen');
+  var tabs=document.querySelectorAll('.tabb');
+  function go(id){
+    var found=false;
+    screens.forEach(function(s){var on=s.id===id;s.classList.toggle('on',on);if(on)found=true;});
+    tabs.forEach(function(t){t.classList.toggle('on',t.dataset.t===id);});
+    if(found){document.querySelector('.frame').scrollIntoView({behavior:'smooth',block:'start'});}
+  }
+  document.addEventListener('click',function(e){
+    var el=e.target.closest('[data-t]');
+    if(el){go(el.dataset.t);}
+  });
+</script>
+</body>
+</html>

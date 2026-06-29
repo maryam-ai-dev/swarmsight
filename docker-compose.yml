@@ -1,0 +1,54 @@
+# Sprint 0 local stack: Authority, Intelligence, and Postgres.
+# Bring it up with: docker compose up --build
+#
+# Authority waits for Postgres to be healthy before starting, so Flyway can
+# connect and migrate on first boot.
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: swarmsight
+      POSTGRES_USER: swarmsight
+      POSTGRES_PASSWORD: swarmsight
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U swarmsight -d swarmsight"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  authority:
+    build: ./authority
+    environment:
+      AUTHORITY_DB_URL: jdbc:postgresql://postgres:5432/swarmsight
+      AUTHORITY_DB_USER: swarmsight
+      AUTHORITY_DB_PASSWORD: swarmsight
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  intelligence:
+    build: ./intelligence
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+
+volumes:
+  pgdata:

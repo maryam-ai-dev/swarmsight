@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: authority
+  datasource:
+    url: ${AUTHORITY_DB_URL:jdbc:postgresql://localhost:5432/swarmsight}
+    username: ${AUTHORITY_DB_USER:swarmsight}
+    password: ${AUTHORITY_DB_PASSWORD:swarmsight}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+server:
+  port: 8080

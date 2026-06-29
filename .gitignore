@@ -1,0 +1,21 @@
+# Java / Maven
+authority/target/
+*.class
+
+# Python
+intelligence/__pycache__/
+intelligence/**/__pycache__/
+intelligence/.venv/
+intelligence/.pytest_cache/
+*.pyc
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+
+# Env
+.env
