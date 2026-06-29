@@ -268,3 +268,40 @@ screen:
 Export bundles the case's ledger rows and the policy versions they reference
 into one canonical JSON structure and hashes it with the same sha256 over
 canonical bytes used everywhere else. Same input, same export hash, every time.
+
+## Sprint 4: capability broker skeleton
+
+Locked 2026-06-29.
+
+### A capability is narrow and short-lived
+
+A capability is bound to exactly one connector, one case, and one action, and
+grants exactly one resource scope. It expires in minutes (default 300 seconds,
+`swarmsight.capability.ttl-seconds`). It is minted only on an allow Verdict and
+records `issued_by_verdict` (the deciding row's row_hash), so it can never grant
+more than the verdict that issued it. A fetch that asks for a different
+connector, case, action, or resource scope exceeds the verdict and is rejected.
+
+### Where the revocation list lives
+
+The `capabilities` table is the live working store and the revocation list: a
+capability is revoked by setting its `revoked_at`. Every fetch loads the
+capability row and checks `revoked_at IS NULL`, the expiry, and the binding,
+before any connector is touched. The ledger holds the immutable proof of
+issuance and revocation; the table is the fast index the broker checks on every
+use.
+
+### Issuance and revocation are ledger events
+
+Minting a capability writes a `capability_issued` row; revoking writes a
+`capability_revoked` row. Both go through the same single serialised,
+hash-chained appender as every other write, and both are idempotent.
+
+### The broker cannot be bypassed
+
+Connector access is structurally gated. The `Connector` interface and the
+`CapabilityGrant` token are package-private to the broker package, and a grant
+can only be constructed inside that package, by the broker, after it has
+validated a capability. No code outside the broker package can name a grant or
+call a connector, so there is no path to a connector that skips the check. The
+only public entry is `CapabilityBroker`, whose every fetch validates first.

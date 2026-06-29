@@ -17,7 +17,24 @@ stop.
 
 ## What works end to end
 
-### Sprint 3: proof pack assembly and chain verification (current)
+### Sprint 4: capability broker skeleton (current)
+
+- Authority issues short-lived, scoped, revocable capabilities. A capability is
+  bound to one connector, one case, and one action, grants one resource scope,
+  expires in minutes, and is minted only on an allow Verdict.
+- POST `/cases/{caseRef}/capabilities` decides the action and, only on an allow,
+  mints a capability bound to that verdict. A hold or block mints nothing.
+- POST `/broker/fetch` is the only way to reach a connector. It rejects a fetch
+  with no capability, an expired one, a revoked one, or one that exceeds its
+  connector, case, action, or scope. All tested.
+- POST `/capabilities/{id}/revoke` revokes. Issuance and revocation are both
+  ledger events.
+- The broker cannot be bypassed: the connector type and the grant token are
+  package-private and a grant is only made by the broker after it validates, so
+  no code path reaches a connector without the check. Proven by a test.
+- A mock connector exercises the broker before any real connector exists.
+
+### Sprint 3: proof pack assembly and chain verification
 
 - Work is captured as three more ledger intents: `author` (the service drafts),
   `edit` (a human edits), and `approve` (an officer approves, recording a reason,
