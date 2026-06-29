@@ -44,6 +44,14 @@ public class CapabilityRepository {
         return jdbc.query("SELECT * FROM capabilities WHERE id = ?", MAPPER, id).stream().findFirst();
     }
 
+    /** The agent's live capabilities: unrevoked and unexpired. Used by incident containment. */
+    public java.util.List<Capability> findActiveByActor(String actor) {
+        return jdbc.query(
+                "SELECT * FROM capabilities WHERE actor = ? AND revoked_at IS NULL AND expires_at > ?",
+                MAPPER, actor,
+                OffsetDateTime.ofInstant(Instant.now(), ZoneOffset.UTC));
+    }
+
     public void insert(Capability c) {
         jdbc.update(
                 "INSERT INTO capabilities (id, run_id, case_ref, action, actor, connector, resource_scope, "

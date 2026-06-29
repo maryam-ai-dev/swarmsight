@@ -46,10 +46,13 @@ public class GoLiveGate {
         boolean present = cert.isPresent();
         boolean expired = present && now.isAfter(cert.get().expiresAt());
         String certifiedCeiling = present ? cert.get().ceiling() : null;
+        String certStatus = present ? cert.get().status() : null;
+        boolean active = present && "ACTIVE".equals(certStatus);
         GateResult.CertificateSummary summary = new GateResult.CertificateSummary(
                 present,
                 present ? cert.get().id() : null,
                 certifiedCeiling,
+                certStatus,
                 present ? cert.get().issuedAt() : null,
                 present ? cert.get().expiresAt() : null,
                 expired);
@@ -70,13 +73,16 @@ public class GoLiveGate {
         Map<String, Boolean> connectors = connectorHealth.statuses();
         boolean connectorsHealthy = connectorHealth.allHealthy();
 
-        boolean ceilingOk = present && !expired && withinCeiling(requested, certifiedCeiling);
+        boolean withinCeiling = withinCeiling(requested, certifiedCeiling);
+        boolean ceilingOk = active && !expired && withinCeiling;
 
         List<String> blockers = new ArrayList<>();
         if (!present) {
             blockers.add("No certificate has been issued for this agent.");
         } else if (expired) {
             blockers.add("The certificate has expired.");
+        } else if (!active) {
+            blockers.add("The certificate is not active (status " + certStatus + "); re-certification is required.");
         }
         if (!policyBound) {
             blockers.add("No policy version is in force for " + workflow + ".");
@@ -90,7 +96,7 @@ public class GoLiveGate {
         if (!humanJudgementActive) {
             blockers.add("The human-judgement rule is not active in the policy.");
         }
-        if (present && !expired && !ceilingOk) {
+        if (active && !expired && !withinCeiling) {
             blockers.add("The requested ceiling " + requested + " exceeds the certified ceiling "
                     + certifiedCeiling + ".");
         }

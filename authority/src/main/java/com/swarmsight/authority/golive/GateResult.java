@@ -33,6 +33,7 @@ public record GateResult(
             boolean present,
             String id,
             String ceiling,
+            String status,
             Instant issuedAt,
             Instant expiresAt,
             boolean expired) {

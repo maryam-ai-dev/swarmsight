@@ -16,7 +16,24 @@ stop.
 
 ## What works end to end
 
-### Sprint 8: Policy Workbench, propose and approve (current)
+### Sprint 9: incident response and revocation (current)
+
+- An incident is raised by a trigger (missed escalation, guard breach, source
+  stale, confidence collapse, human report). POST `/incidents` runs containment.
+- Containment is automatic and fails closed, each step a ledger event: it
+  suspends the certificate, revokes the agent's live capabilities through the
+  broker (which stops honouring them at once), holds the in-flight cases, and
+  disables the action class, then notifies the service owner.
+- The agent cannot return to live without re-certification: the go-live gate
+  only promotes on an ACTIVE certificate, and re-certification reactivates it.
+- POST `/agents/{id}/restrict` restricts one action class. GET `/incidents/{id}`
+  is the incident's own audit pack. GET `/oversight/metrics` and GET
+  `/agents/{id}/log` drive the oversight screens.
+- Frontend: the Head of department oversight and Per-agent log screens render
+  real metrics and run-filtered ledger rows, and the restrict and suspend
+  controls are real writes. The whole demo now runs on the backend.
+
+### Sprint 8: Policy Workbench, propose and approve
 
 - A rule change moves through a human-approved pipeline. POST `/policy-changes`
   fetches sources (uri, version, content hash), extracts a candidate, and shows

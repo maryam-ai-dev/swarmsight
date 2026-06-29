@@ -247,6 +247,9 @@
     <button class="tabb" data-t="masking">Sensitive data</button>
     <span class="grp">Audit</span>
     <button class="tabb" data-t="audit">Proof pack</button>
+    <span class="grp">Oversight</span>
+    <button class="tabb" data-t="oversight">Head of department</button>
+    <button class="tabb" data-t="agentlog">Per-agent log</button>
   </div>
 </div></div>
 
@@ -528,6 +531,42 @@
     <div class="note"><b>Masked</b> means the agent knows a field exists but not its value. <b>No access</b> means the field is removed entirely, the agent never knows it was there.</div>
     <div class="rule"><b>How it is decided:</b> a field reaches the agent only if the source's own permissions allow it <b>and</b> the department's sensitivity policy permits it at the agent's clearance. Both must agree. Every mask is recorded, so an auditor can prove the data was never exposed.</div>
     <span class="lk" data-t="case">← Back to case</span>
+  </div>
+</section>
+
+<!-- ===== HEAD OF DEPARTMENT OVERSIGHT ===== -->
+<section class="screen reg-gov" id="oversight">
+  <div class="gm"><span class="sq"></span><span class="nm">SwarmSight <span>· Oversight</span></span></div>
+  <div class="gp"><span class="tag t-b">Beta</span><span>Live oversight. If an agent misbehaves, contain it at once.</span></div>
+  <div class="mn">
+    <div class="cap">Head of department</div>
+    <h1>Department oversight</h1>
+    <p class="lead">Live metrics from the ledger, and the controls to restrict an action or suspend an agent. Containment is immediate and fully recorded.</p>
+    <div id="oversightMetrics" style="margin-top:18px">Loading live metrics from Authority…</div>
+    <div class="h2" style="margin-top:22px">Live agent</div>
+    <div class="sl" style="margin-top:12px">
+      <div class="r"><span class="k">Housing appeals agent v3</span><span class="vv" id="oversightAgentStatus">checking…</span></div>
+      <div style="margin-top:12px">
+        <span class="btn sec" id="restrictBtn">Restrict sending</span>
+        <span class="btn" id="suspendBtn" style="background:#d4351c">Suspend agent</span>
+        <span class="lk" data-t="agentlog" style="margin-left:12px">View per-agent log</span>
+      </div>
+      <div id="oversightStatus" style="margin-top:12px;font-size:14px;color:#505a5f"></div>
+    </div>
+    <div class="h2" style="margin-top:22px">Incidents</div>
+    <div id="incidentsList" style="margin-top:12px">Loading…</div>
+  </div>
+</section>
+
+<!-- ===== PER-AGENT LOG ===== -->
+<section class="screen reg-gov" id="agentlog">
+  <div class="gm"><span class="sq"></span><span class="nm">SwarmSight <span>· Oversight</span></span></div>
+  <div class="gp"><span class="tag t-b">Beta</span><span>Every action this agent took, from the ledger.</span></div>
+  <div class="mn">
+    <div class="crumb"><span class="lk" data-t="oversight">Department oversight</span> › Per-agent log</div>
+    <h1>Per-agent log: housing appeals agent v3</h1>
+    <p class="lead">The agent's ledger rows, newest first. Every decision, capture, certificate, deployment, and containment event, hash-chained and provable.</p>
+    <div id="agentLogList" style="margin-top:18px">Loading the agent log from Authority…</div>
   </div>
 </section>
 
@@ -863,6 +902,109 @@
         .catch(function(err){status.textContent='Sign-off failed ('+err.message+').';});
     });
   }
+
+  // Sprint 9: the Head of department oversight and Per-agent log screens render
+  // real ledger data and live metrics, and the restrict and suspend controls are
+  // real writes that run containment.
+  var METRIC_LABELS = {
+    ledger_rows:'Ledger rows', decisions:'Decisions', holds:'Held', blocks:'Blocked',
+    allows:'Allowed', certificates:'Certificates', active_certificates:'Active certificates',
+    suspended_certificates:'Suspended certificates', deployments:'Deployments',
+    incidents:'Incidents', revoked_capabilities:'Revoked capabilities'
+  };
+  function renderOversight(){
+    fetch(AUTHORITY_API+'/oversight/metrics')
+      .then(function(r){if(!r.ok){throw new Error('HTTP '+r.status);}return r.json();})
+      .then(function(m){
+        document.getElementById('oversightMetrics').innerHTML='<div class="two" style="flex-wrap:wrap;gap:10px">'+
+          Object.keys(m).map(function(k){
+            return '<div class="sl" style="min-width:150px;flex:0 0 auto"><div class="r"><span class="k">'+
+              esc(METRIC_LABELS[k]||k)+'</span><span class="vv">'+m[k]+'</span></div></div>';
+          }).join('')+'</div>';
+      })
+      .catch(function(err){document.getElementById('oversightMetrics').textContent='Could not reach Authority ('+err.message+').';});
+
+    fetch(AUTHORITY_API+'/agents/'+encodeURIComponent(AGENT_ID)+'/certificate')
+      .then(function(r){return r.ok?r.json():null;})
+      .then(function(rep){
+        var el=document.getElementById('oversightAgentStatus');
+        if(rep&&rep.certificate){
+          var st=rep.certificate.status;
+          el.innerHTML=st==='ACTIVE'?'<span class="tag t-g">active L'+esc(rep.certificate.ceiling.replace('L',''))+'</span>':
+            '<span class="tag" style="background:#d4351c;color:#fff">'+esc(st)+'</span>';
+        } else { el.textContent='no certificate'; }
+      }).catch(function(){});
+
+    renderIncidents();
+  }
+  function renderIncidents(){
+    var box=document.getElementById('incidentsList');
+    fetch(AUTHORITY_API+'/incidents')
+      .then(function(r){if(!r.ok){throw new Error('HTTP '+r.status);}return r.json();})
+      .then(function(incidents){
+        if(!incidents.length){box.textContent='No incidents.';return;}
+        box.innerHTML=incidents.map(function(i){
+          var c=i.containment;
+          return '<div class="sl" style="margin-bottom:12px"><div class="r"><span class="k">'+
+            esc(i.trigger)+' <span class="tag t-y">'+esc(i.status)+'</span></span>'+
+            '<span class="vv">'+esc(i.agentId)+'</span></div>'+
+            '<div style="margin-top:8px">'+esc(i.detail||'')+'</div>'+
+            '<div class="src" style="color:#505a5f">Suspended '+esc(c.suspendedCertificate||'none')+
+            ' · revoked '+(c.revokedCapabilities||[]).length+' capability(ies) · held '+
+            (c.heldCases||[]).length+' case(s) · service owner notified</div></div>';
+        }).join('');
+      })
+      .catch(function(err){box.textContent='Could not reach Authority ('+err.message+').';});
+  }
+  renderOversight();
+
+  var suspendBtn=document.getElementById('suspendBtn');
+  if(suspendBtn){
+    suspendBtn.addEventListener('click',function(){
+      var status=document.getElementById('oversightStatus');
+      status.textContent='Raising an incident and containing the agent…';
+      fetch(AUTHORITY_API+'/incidents',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({agentId:AGENT_ID,trigger:'HUMAN_REPORT',
+          detail:'Suspended from the oversight screen',reportedBy:'Head of Housing Service'})})
+        .then(function(r){return r.json();}).then(function(i){
+          var c=i.containment;
+          status.innerHTML='Contained. Certificate <b>'+esc(c.suspendedCertificate||'none')+
+            '</b> suspended, '+(c.revokedCapabilities||[]).length+' capability(ies) revoked, '+
+            (c.heldCases||[]).length+' case(s) held. Ledgered. Re-certification required to return to live.';
+          renderOversight();
+        }).catch(function(err){status.textContent='Suspend failed ('+err.message+').';});
+    });
+  }
+  var restrictBtn=document.getElementById('restrictBtn');
+  if(restrictBtn){
+    restrictBtn.addEventListener('click',function(){
+      var status=document.getElementById('oversightStatus');
+      status.textContent='Restricting the send action…';
+      fetch(AUTHORITY_API+'/agents/'+encodeURIComponent(AGENT_ID)+'/restrict',
+        {method:'POST',headers:{'Content-Type':'application/json'},
+         body:JSON.stringify({action:'send_decision',reason:'Restricted from the oversight screen',
+           reportedBy:'Head of Housing Service'})})
+        .then(function(r){return r.json();}).then(function(res){
+          status.innerHTML='Action <b>'+esc(res.action)+'</b> restricted for the agent. Recorded in the ledger.';
+        }).catch(function(err){status.textContent='Restrict failed ('+err.message+').';});
+    });
+  }
+
+  function renderAgentLog(){
+    var box=document.getElementById('agentLogList');
+    fetch(AUTHORITY_API+'/agents/'+encodeURIComponent(AGENT_ID)+'/log')
+      .then(function(r){if(!r.ok){throw new Error('HTTP '+r.status);}return r.json();})
+      .then(function(rows){
+        if(!rows.length){box.textContent='No ledger rows for this agent yet.';return;}
+        box.innerHTML='<table><tr><th>seq</th><th>intent</th><th>case</th><th>actor</th><th>row hash</th></tr>'+
+          rows.map(function(r){
+            return '<tr><td>'+r.seq+'</td><td>'+esc(r.intent)+'</td><td>'+esc(r.caseRef)+'</td><td>'+
+              esc(r.actor)+'</td><td class="mono">'+esc(String(r.rowHash).slice(0,12))+'…</td></tr>';
+          }).join('')+'</table>';
+      })
+      .catch(function(err){box.textContent='Could not reach Authority ('+err.message+').';});
+  }
+  renderAgentLog();
 
   // The Check agent button also runs a live check against Intelligence.
   var runBtn=document.getElementById('runCheckBtn');

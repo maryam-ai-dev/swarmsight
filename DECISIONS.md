@@ -486,3 +486,39 @@ base version; on or after, under the new one.
 Activating a policy change flags the certificates it impacts (their status moves
 to REVIEW_REQUIRED) and records them, the new version, the sources, and the
 transition rule in a policy-change ledger event.
+
+## Sprint 9: incident response and revocation
+
+Locked 2026-06-29.
+
+### Triggers
+
+An incident is raised by one of: a missed escalation, a guard breach, a source
+gone stale, a confidence collapse, or a human report. The trigger and a detail
+are recorded.
+
+### Containment is automatic and fails closed
+
+Raising an incident immediately, and each step a ledger event:
+
+- Suspends the certificate (status SUSPENDED).
+- Revokes the agent's live capabilities through the broker, so the broker stops
+  honouring them at once.
+- Holds the in-flight cases (the cases those capabilities were open against),
+  never silently re-deciding them.
+- Disables the affected action class.
+
+Then it notifies the service owner. Containment never waits for a human; the
+human comes after.
+
+### Return to live needs re-certification
+
+The go-live gate only promotes on an ACTIVE certificate. A SUSPENDED (or
+REVIEW_REQUIRED) certificate blocks promotion. The only way back is
+re-certification: running the Arena again and re-issuing the certificate, which
+reactivates it. There is no manual un-suspend.
+
+### Every incident has its own audit pack
+
+An incident produces an audit pack: the incident record and the run-filtered
+ledger rows for its containment, so the whole response is provable.

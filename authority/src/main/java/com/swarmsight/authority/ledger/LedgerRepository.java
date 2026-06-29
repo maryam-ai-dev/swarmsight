@@ -73,6 +73,17 @@ public class LedgerRepository {
         return jdbc.query("SELECT * FROM ledger_rows WHERE case_ref = ? ORDER BY seq", MAPPER, caseRef);
     }
 
+    /** The agent's ledger rows: where it acted, or where it is the case subject. */
+    public List<LedgerRow> findByAgent(String agentId) {
+        return jdbc.query(
+                "SELECT * FROM ledger_rows WHERE actor = ? OR case_ref = ? ORDER BY seq DESC",
+                MAPPER, agentId, agentId);
+    }
+
+    public List<LedgerRow> findByRunIdDesc(String runId) {
+        return jdbc.query("SELECT * FROM ledger_rows WHERE run_id = ? ORDER BY seq", MAPPER, runId);
+    }
+
     public List<LedgerRow> findAllOrderBySeq() {
         return jdbc.query("SELECT * FROM ledger_rows ORDER BY seq", MAPPER);
     }

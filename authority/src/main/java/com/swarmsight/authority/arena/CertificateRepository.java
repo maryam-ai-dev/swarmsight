@@ -41,16 +41,32 @@ public class CertificateRepository {
     public record Stored(Certificate certificate, JsonNode arenaSummary) {
     }
 
+    /**
+     * Insert a certificate, or re-issue it on re-certification. On conflict the
+     * row is refreshed and its status returns to ACTIVE, which is the only way an
+     * agent comes back to live after a suspension.
+     */
     public void insert(Certificate c, Object arenaSummary) {
         jdbc.update(
                 "INSERT INTO certificates (id, agent_id, assurance_case_ref, certified_actions, "
                         + "not_certified_actions, ceiling, builder, approver, arena_summary, issued_at, "
                         + "expires_at, status) VALUES (?, ?, ?, CAST(? AS jsonb), CAST(? AS jsonb), ?, ?, ?, "
-                        + "CAST(? AS jsonb), ?, ?, ?) ON CONFLICT (id) DO NOTHING",
+                        + "CAST(? AS jsonb), ?, ?, ?) ON CONFLICT (id) DO UPDATE SET "
+                        + "assurance_case_ref = EXCLUDED.assurance_case_ref, "
+                        + "certified_actions = EXCLUDED.certified_actions, "
+                        + "not_certified_actions = EXCLUDED.not_certified_actions, ceiling = EXCLUDED.ceiling, "
+                        + "builder = EXCLUDED.builder, approver = EXCLUDED.approver, "
+                        + "arena_summary = EXCLUDED.arena_summary, issued_at = EXCLUDED.issued_at, "
+                        + "expires_at = EXCLUDED.expires_at, status = EXCLUDED.status",
                 c.id(), c.agentId(), c.assuranceCaseRef(), write(c.certifiedActions()),
                 write(c.notCertifiedActions()), c.ceiling(), c.builder(), c.approver(), write(arenaSummary),
                 OffsetDateTime.ofInstant(c.issuedAt(), ZoneOffset.UTC),
                 OffsetDateTime.ofInstant(c.expiresAt(), ZoneOffset.UTC), c.status());
+    }
+
+    /** Suspend a certificate as part of incident containment. */
+    public void markSuspended(String id) {
+        jdbc.update("UPDATE certificates SET status = 'SUSPENDED' WHERE id = ?", id);
     }
 
     public Optional<Stored> findLatestByAgent(String agentId) {
