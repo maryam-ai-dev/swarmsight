@@ -12,6 +12,7 @@ public record Capability(
         String runId,
         String caseRef,
         String action,
+        String actor,
         String connector,
         String resourceScope,
         String issuedByVerdict,

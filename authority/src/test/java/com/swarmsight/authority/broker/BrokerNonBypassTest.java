@@ -32,6 +32,14 @@ class BrokerNonBypassTest {
     }
 
     @Test
+    void rawRecordIsNotPublicSoUnmaskedValuesCannotLeaveTheBroker() {
+        // Raw source values are carried only by RawRecord, which is package-
+        // private, so no fetch can return unmasked data without the mirror.
+        assertThat(Modifier.isPublic(RawRecord.class.getModifiers()))
+                .as("RawRecord must not be public").isFalse();
+    }
+
+    @Test
     void theOnlyWayToCallAConnectorIsWithAGrant() throws Exception {
         Method fetch = Connector.class.getMethod("fetch", CapabilityGrant.class);
         assertThat(fetch.getParameterTypes()).containsExactly(CapabilityGrant.class);

@@ -17,7 +17,24 @@ stop.
 
 ## What works end to end
 
-### Sprint 4: capability broker skeleton (current)
+### Sprint 5: one real connector, permission mirror, masking (current)
+
+- One connector adapter (a mock case system) fetches only under a brokered
+  capability, returning raw values plus the source's own per-field permission.
+- The permission mirror computes, per field, the intersection of the source
+  permission and the department sensitivity policy: allow, mask, or deny. Either
+  side can restrict; neither can widen what the other restricts.
+- Masking is applied at the boundary before the record reaches the agent. The
+  fetch returns National Insurance masked and medical notes denied (removed
+  entirely), matching the masking screen.
+- The `field_effects` (per field: source permission, policy, outcome) are
+  recorded on a `source_fetch` ledger row, never the values, so an auditor can
+  prove what was exposed, masked, and denied. GET `/cases/{caseRef}/field-effects`
+  serves them.
+- No fetch path skips the mirror: raw values are carried only by a
+  package-private record, and the broker always mirrors before returning.
+
+### Sprint 4: capability broker skeleton
 
 - Authority issues short-lived, scoped, revocable capabilities. A capability is
   bound to one connector, one case, and one action, grants one resource scope,

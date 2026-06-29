@@ -10,5 +10,10 @@ interface Connector {
 
     String name();
 
-    ConnectorRecord fetch(CapabilityGrant grant);
+    /**
+     * Fetch raw values for a granted scope. The broker runs the permission
+     * mirror over this before anything reaches the agent; the connector itself
+     * never masks.
+     */
+    RawRecord fetch(CapabilityGrant grant);
 }

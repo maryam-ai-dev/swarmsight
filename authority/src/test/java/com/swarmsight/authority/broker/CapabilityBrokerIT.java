@@ -64,6 +64,36 @@ class CapabilityBrokerIT {
     }
 
     @Test
+    void fetchMasksNationalInsuranceAndDeniesMedicalNotes() {
+        IssueResult result = requestFor("mask", "CAP-MASK", clearInputs(), "tenancy_record");
+        ConnectorRecord record = broker.fetch(result.capability().id(), CONNECTOR, "tenancy_record",
+                "CAP-MASK", "draft_response");
+
+        assertThat(record.fields()).containsEntry("national_insurance", "XXXXXXXXX");
+        assertThat(record.fields()).doesNotContainKey("medical_notes");
+        assertThat(record.fields()).containsEntry("tenancy_status", "confirmed");
+        assertThat(record.fieldEffects())
+                .anyMatch(e -> e.field().equals("national_insurance") && e.outcome() == FieldEffect.MASK)
+                .anyMatch(e -> e.field().equals("medical_notes") && e.outcome() == FieldEffect.DENY);
+    }
+
+    @Test
+    void fieldEffectsAreLedgeredWithoutRawValues() {
+        IssueResult result = requestFor("fe", "CAP-FE", clearInputs(), "tenancy_record");
+        broker.fetch(result.capability().id(), CONNECTOR, "tenancy_record", "CAP-FE", "draft_response");
+
+        LedgerRow fetchRow = ledgerRepository.findByCaseRef("CAP-FE").stream()
+                .filter(r -> r.intent().equals("source_fetch"))
+                .reduce((a, b) -> b).orElseThrow();
+
+        // The effects and field names are recorded, so an auditor sees what
+        // happened, but the values are never in the ledger.
+        assertThat(fetchRow.payload()).contains("field_effects", "national_insurance", "MASK", "DENY");
+        assertThat(fetchRow.payload()).doesNotContain("QQ123456C");
+        assertThat(fetchRow.payload()).doesNotContain("Disability");
+    }
+
+    @Test
     void holdMintsNoCapability() {
         IssueResult result = requestFor("hold", "CAP-HOLD", evictionInputs(), "tenancy_record");
         assertThat(result.verdict().effect()).isEqualTo(Effect.HOLD);
@@ -93,7 +123,7 @@ class CapabilityBrokerIT {
     void fetchWithAnExpiredCapabilityIsRejected() {
         Instant past = Instant.now().minusSeconds(120);
         capabilityRepository.insert(new Capability(
-                "cap-expired", "run-exp", "CAP-EXP", "draft_response", CONNECTOR, "tenancy_record",
+                "cap-expired", "run-exp", "CAP-EXP", "draft_response", "agent-1", CONNECTOR, "tenancy_record",
                 "verdict-x", past.minusSeconds(60), past, true, null, null));
 
         BrokerException ex = catchThrowableOfType(

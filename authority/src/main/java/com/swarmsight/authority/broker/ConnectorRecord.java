@@ -1,14 +1,17 @@
 package com.swarmsight.authority.broker;
 
+import java.util.List;
 import java.util.Map;
 
 /**
- * What a connector returns for a fetch: the connector it came from, the resource
- * scope that was granted, and the fields. The permission mirror and masking in
- * Sprint 5 act on these fields before they reach the agent.
+ * What the agent receives: the masked fields and the per-field effects that
+ * produced them. Allowed fields carry their value, masked fields carry a mask,
+ * and denied fields are absent. This is the only public record from a fetch, and
+ * the broker is the only thing that can build it, after the mirror has run.
  */
 public record ConnectorRecord(
         String connector,
         String resourceScope,
-        Map<String, Object> fields) {
+        Map<String, Object> fields,
+        List<FieldEffectEntry> fieldEffects) {
 }

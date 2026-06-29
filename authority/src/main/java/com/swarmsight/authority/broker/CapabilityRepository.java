@@ -30,6 +30,7 @@ public class CapabilityRepository {
             rs.getString("run_id"),
             rs.getString("case_ref"),
             rs.getString("action"),
+            rs.getString("actor"),
             rs.getString("connector"),
             rs.getString("resource_scope"),
             rs.getString("issued_by_verdict"),
@@ -45,10 +46,10 @@ public class CapabilityRepository {
 
     public void insert(Capability c) {
         jdbc.update(
-                "INSERT INTO capabilities (id, run_id, case_ref, action, connector, resource_scope, "
+                "INSERT INTO capabilities (id, run_id, case_ref, action, actor, connector, resource_scope, "
                         + "issued_by_verdict, issued_at, expires_at, revocable, revoked_at, revoked_reason) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING",
-                c.id(), c.runId(), c.caseRef(), c.action(), c.connector(), c.resourceScope(),
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING",
+                c.id(), c.runId(), c.caseRef(), c.action(), c.actor(), c.connector(), c.resourceScope(),
                 c.issuedByVerdict(),
                 OffsetDateTime.ofInstant(c.issuedAt(), ZoneOffset.UTC),
                 OffsetDateTime.ofInstant(c.expiresAt(), ZoneOffset.UTC),

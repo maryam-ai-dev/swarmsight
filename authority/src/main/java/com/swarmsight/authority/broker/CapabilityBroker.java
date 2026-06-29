@@ -10,6 +10,7 @@ import com.swarmsight.authority.policy.PolicyVersion;
 import com.swarmsight.authority.run.RunContext;
 import com.swarmsight.authority.run.RunContextRepository;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,12 +31,14 @@ public class CapabilityBroker {
 
     private static final String ISSUED = "capability_issued";
     private static final String REVOKED = "capability_revoked";
+    private static final String FETCH = "source_fetch";
 
     private final CapabilityRepository capabilityRepository;
     private final LedgerService ledgerService;
     private final PolicyRepository policyRepository;
     private final RunContextRepository runContextRepository;
     private final DecisionService decisionService;
+    private final PermissionMirror permissionMirror;
     private final Map<String, Connector> connectors;
     private final long ttlSeconds;
 
@@ -45,6 +48,7 @@ public class CapabilityBroker {
             PolicyRepository policyRepository,
             RunContextRepository runContextRepository,
             DecisionService decisionService,
+            PermissionMirror permissionMirror,
             List<Connector> connectorList,
             @Value("${swarmsight.capability.ttl-seconds:300}") long ttlSeconds) {
         this.capabilityRepository = capabilityRepository;
@@ -52,6 +56,7 @@ public class CapabilityBroker {
         this.policyRepository = policyRepository;
         this.runContextRepository = runContextRepository;
         this.decisionService = decisionService;
+        this.permissionMirror = permissionMirror;
         this.connectors = connectorList.stream().collect(Collectors.toMap(Connector::name, Function.identity()));
         this.ttlSeconds = ttlSeconds;
     }
@@ -92,7 +97,7 @@ public class CapabilityBroker {
 
         Instant now = Instant.now();
         Capability capability = new Capability(
-                id, runId, caseRef, action, connector, resourceScope, issuedByVerdict,
+                id, runId, caseRef, action, actor, connector, resourceScope, issuedByVerdict,
                 now, now.plusSeconds(ttlSeconds), true, null, null);
 
         Map<String, Object> payload = new LinkedHashMap<>();
@@ -158,7 +163,36 @@ public class CapabilityBroker {
         // The grant exists only here, after validation. This is the single path
         // to a connector.
         CapabilityGrant grant = new CapabilityGrant(capabilityId, connector, resourceScope, caseRef, action);
-        return target.fetch(grant);
+        RawRecord raw = target.fetch(grant);
+
+        // The mirror runs before anything leaves the boundary. Raw values never
+        // escape un-mirrored.
+        PermissionMirror.Mirrored mirrored = permissionMirror.apply(raw);
+        recordFieldEffects(cap, connector, resourceScope, mirrored.fieldEffects());
+        return new ConnectorRecord(connector, resourceScope, mirrored.maskedFields(), mirrored.fieldEffects());
+    }
+
+    /** Ledger the field_effects (never the values), proving what was exposed. */
+    private void recordFieldEffects(
+            Capability cap, String connector, String resourceScope, List<FieldEffectEntry> effects) {
+        List<Map<String, Object>> effectsPayload = new ArrayList<>();
+        for (FieldEffectEntry e : effects) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("field", e.field());
+            m.put("source_permission", e.sourcePermission().name());
+            m.put("policy", e.policy().name());
+            m.put("outcome", e.outcome().name());
+            effectsPayload.add(m);
+        }
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("capability_id", cap.id());
+        payload.put("connector", connector);
+        payload.put("resource_scope", resourceScope);
+        payload.put("field_effects", effectsPayload);
+
+        String workflow = runContextRepository.find(cap.runId()).map(RunContext::workflow).orElse("unknown");
+        ledgerService.append(FETCH, cap.actor(), cap.runId(), cap.caseRef(), cap.action(),
+                versionFor(workflow), payload, cap.id() + ":fetch:" + resourceScope, Instant.now());
     }
 
     private String versionFor(String workflow) {

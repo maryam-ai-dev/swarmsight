@@ -305,3 +305,56 @@ can only be constructed inside that package, by the broker, after it has
 validated a capability. No code outside the broker package can name a grant or
 call a connector, so there is no path to a connector that skips the check. The
 only public entry is `CapabilityBroker`, whose every fetch validates first.
+
+## Sprint 5: one real connector, permission mirror, masking
+
+Locked 2026-06-29.
+
+### The first connector
+
+A mock case system, reached through the broker like any connector. The interface
+is what matters, not the target: the adapter returns a package-private RawRecord
+that never leaves the broker package un-mirrored. Swapping in SharePoint via
+Microsoft Graph later is an adapter change, nothing more.
+
+### The field sensitivity map for the housing example
+
+The department sensitivity policy, at the agent's clearance, per field:
+
+- `applicant_name`: ALLOW
+- `income`: ALLOW
+- `tenancy_status`: ALLOW
+- `national_insurance`: MASK
+- `medical_notes`: DENY
+
+Any field not in the map fails closed to DENY. The agent only sees a field that
+is explicitly allowed.
+
+### The permission mirror
+
+Per field, the outcome is the intersection of two judgements: the source's own
+permission for this agent, and the department sensitivity policy. The three
+effects are ordered `DENY < MASK < ALLOW`, and the intersection is the more
+restrictive of the two. So either side can downgrade a field, and neither can
+upgrade what the other restricts.
+
+- ALLOW: the value passes to the agent.
+- MASK: the agent sees that the field exists, but the value is replaced with a
+  mask. It knows the field is there, not what it holds.
+- DENY: the field is removed entirely. The agent never knows it existed.
+
+### Masking happens at the boundary, and field_effects are ledgered
+
+The mirror runs inside the broker, after the connector returns and before the
+record leaves the broker. The masked record is what the agent receives. A
+`source_fetch` ledger row records the `field_effects` (per field: the source
+permission, the policy, and the outcome) but never the values, so an auditor can
+prove what was exposed, masked, and denied without the ledger itself holding the
+data. The fetch is idempotent per capability and resource scope.
+
+### No fetch path skips the mirror
+
+The connector returns a package-private RawRecord, so raw values cannot leave the
+broker package. The broker is the only caller, and it always runs the mirror
+before producing the public, masked ConnectorRecord. There is no path that
+returns unmasked source data.

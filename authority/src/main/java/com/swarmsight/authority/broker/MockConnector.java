@@ -1,13 +1,15 @@
 package com.swarmsight.authority.broker;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.stereotype.Component;
 
 /**
- * A stand-in source that exercises the broker before any real connector exists.
- * It only accepts a CapabilityGrant, which only the broker can produce, so it
- * cannot be fetched from without a validated capability. It returns canned
- * records keyed by resource scope.
+ * A stand-in case system that exercises the broker before a real connector
+ * exists. It only accepts a CapabilityGrant the broker produced, and it returns
+ * raw values plus the source's own permission per field. It never masks: the
+ * broker's permission mirror does that. Swapping in SharePoint via Microsoft
+ * Graph later is an adapter change here, nothing else.
  */
 @Component
 class MockConnector implements Connector {
@@ -20,17 +22,25 @@ class MockConnector implements Connector {
     }
 
     @Override
-    public ConnectorRecord fetch(CapabilityGrant grant) {
-        Map<String, Object> fields = switch (grant.resourceScope()) {
-            case "tenancy_record" -> Map.of(
-                    "tenancy_status", "confirmed",
-                    "national_insurance", "QQ123456C",
-                    "address", "12 Example Road");
-            case "income_assessment" -> Map.of(
-                    "income", 18400,
-                    "assessment_ref", "assessment.pdf p.3");
-            default -> Map.of("note", "no record for scope " + grant.resourceScope());
-        };
-        return new ConnectorRecord(grant.connector(), grant.resourceScope(), fields);
+    public RawRecord fetch(CapabilityGrant grant) {
+        Map<String, Object> fields = new LinkedHashMap<>();
+        Map<String, FieldEffect> sourcePermissions = new LinkedHashMap<>();
+
+        if ("tenancy_record".equals(grant.resourceScope())) {
+            put(fields, sourcePermissions, "applicant_name", "Ms A. Adeyemi", FieldEffect.ALLOW);
+            put(fields, sourcePermissions, "income", 18400, FieldEffect.ALLOW);
+            put(fields, sourcePermissions, "tenancy_status", "confirmed", FieldEffect.ALLOW);
+            put(fields, sourcePermissions, "national_insurance", "QQ123456C", FieldEffect.ALLOW);
+            put(fields, sourcePermissions, "medical_notes", "Disability, mobility needs", FieldEffect.ALLOW);
+        } else {
+            put(fields, sourcePermissions, "note", "no record for scope " + grant.resourceScope(), FieldEffect.ALLOW);
+        }
+        return new RawRecord(grant.connector(), grant.resourceScope(), fields, sourcePermissions);
+    }
+
+    private void put(Map<String, Object> fields, Map<String, FieldEffect> perms,
+            String field, Object value, FieldEffect sourcePermission) {
+        fields.put(field, value);
+        perms.put(field, sourcePermission);
     }
 }
