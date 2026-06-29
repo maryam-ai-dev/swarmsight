@@ -16,7 +16,26 @@ stop.
 
 ## What works end to end
 
-### Sprint 7: go-live gate and service-owner sign-off (current)
+### Sprint 8: Policy Workbench, propose and approve (current)
+
+- A rule change moves through a human-approved pipeline. POST `/policy-changes`
+  fetches sources (uri, version, content hash), extracts a candidate, and shows
+  it as a diff. No rule goes live unreviewed.
+- If two sources disagree, the change is held with a reason rather than silently
+  choosing. Tested.
+- POST `/policy-changes/{id}/replay` previews the change by shadow replay against
+  synthetic cases, producing a "what would change" report (the section 21 case
+  flips ALLOW to HOLD).
+- POST `/policy-changes/{id}/activate` compiles the candidate into a new policy
+  version with a future effective date, guards carrying their source provenance.
+  It flags impacted certificates (status REVIEW_REQUIRED), records the transition
+  rule, and writes a policy-change ledger event. Because verdicts resolve under
+  the version in force at their timestamp, a decision before the change still
+  audits under the old version forever. Tested.
+- Frontend: the Policy versions screen shows the real staged change with its
+  shadow-replay preview, and Activate is a live write that runs the supersession.
+
+### Sprint 7: go-live gate and service-owner sign-off
 
 - The go-live gate reads the certificate and enforces it, it does not re-decide.
   GET `/agents/{id}/go-live` checks: certificate present and unexpired, policy

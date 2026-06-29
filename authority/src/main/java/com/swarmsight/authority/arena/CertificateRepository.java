@@ -58,6 +58,16 @@ public class CertificateRepository {
                 mapper, agentId).stream().findFirst();
     }
 
+    /** The ids of all active certificates. A policy change impacts these. */
+    public List<String> findActiveIds() {
+        return jdbc.queryForList("SELECT id FROM certificates WHERE status = 'ACTIVE'", String.class);
+    }
+
+    /** Flag a certificate as needing re-review after a policy change. */
+    public void markReviewRequired(String id) {
+        jdbc.update("UPDATE certificates SET status = 'REVIEW_REQUIRED' WHERE id = ?", id);
+    }
+
     private String write(Object value) {
         try {
             return objectMapper.writeValueAsString(value);

@@ -446,3 +446,43 @@ sign-off is a DeploymentApproval: an approver, a scope, a trial period, a review
 checkpoint, conditions, and the granted ceiling. It is the first write the gate
 performs, and it is a ledger event. Without it, the agent is certified but not
 deployed.
+
+## Sprint 8: Policy Workbench, propose and approve
+
+Locked 2026-06-29.
+
+### A rule change is a human-approved pipeline, not automatic law-to-code
+
+A change moves through stages, and no rule goes live unreviewed:
+
+1. Source fetch: a SourceDocument with uri, version, and content hash. The
+   worked example is the section 21 abolition.
+2. Candidate extraction: the source's directives are extracted into a candidate
+   policy and shown to a human as a diff against the version in force. For this
+   build, extraction is structured (each source carries the guards it proposes),
+   not free-text parsing; the deep extraction is out of scope.
+3. Compilation: on activation, the approved candidate is compiled into a new
+   PolicyVersion whose guards carry their source provenance.
+4. Shadow replay: the candidate is replayed against a set of cases before its
+   effective date, producing a "what would change" report.
+5. Activation: on a future effective date, writing a policy-change ledger event.
+
+### Conflict holds, it never silently chooses
+
+If two sources disagree (the same guard proposed with different effects, or one
+adds what another removes), the change is held with a reason and routed to the
+policy owner. It is never auto-resolved.
+
+### Activation is future-dated, and the past is immutable
+
+A new version is activated with an effective_from in the future. Because verdicts
+resolve under the version in force at their own timestamp (Sprint 2), every
+decision made before the change stays under the old version forever. The
+transition rule is recorded: decisions before the effective date remain under the
+base version; on or after, under the new one.
+
+### Activation flags impacted certificates
+
+Activating a policy change flags the certificates it impacts (their status moves
+to REVIEW_REQUIRED) and records them, the new version, the sources, and the
+transition rule in a policy-change ledger event.

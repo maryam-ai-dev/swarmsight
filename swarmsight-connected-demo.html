@@ -459,7 +459,10 @@
     <div class="crumb"><span class="lk" data-t="case">HX-4471</span> › Policy versions</div>
     <h1>Housing Appeals Policy HA-09</h1>
     <p class="lead">Every decision is judged under the version in force at its own timestamp, and re-audited under that same version forever. These are the real versions held by Authority.</p>
-    <div id="policyVersionsList" style="margin-top:18px">Loading policy versions from Authority…</div>
+    <div class="h2" style="margin-top:22px">Staged change <span class="c">Policy Workbench</span></div>
+    <div id="stagedChanges" style="margin-top:12px">Loading staged changes from Authority…</div>
+    <div class="h2" style="margin-top:22px">Versions in force</div>
+    <div id="policyVersionsList" style="margin-top:12px">Loading policy versions from Authority…</div>
   </div>
 </section>
 
@@ -594,6 +597,73 @@
       .catch(function(err){box.textContent='Could not reach Authority ('+err.message+').';});
   }
   renderPolicyVersions();
+
+  // Sprint 8: the Policy versions screen shows a real staged change with a real
+  // shadow-replay preview, and Activate is a live write that runs the supersession.
+  function renderStagedChanges(){
+    var box=document.getElementById('stagedChanges');
+    fetch(AUTHORITY_API+'/policy-changes?policyId=HA-09')
+      .then(function(r){if(!r.ok){throw new Error('HTTP '+r.status);}return r.json();})
+      .then(function(changes){
+        if(!changes.length){box.textContent='No staged changes.';return;}
+        return Promise.all(changes.map(function(c){
+          return fetch(AUTHORITY_API+'/policy-changes/'+encodeURIComponent(c.id))
+            .then(function(r){return r.json();});
+        })).then(function(views){
+          box.innerHTML=views.map(function(v){
+            var c=v.change, rep=v.shadowReport;
+            var guards=(v.diff.addedGuards||[]).map(function(g){
+              return '<div class="src"><span class="l">+ '+esc(g.name)+'</span> raises to '+esc(g.raiseTo)+
+                ' <span style="color:#505a5f">('+esc(g.source)+')</span></div>';
+            }).join('')||'<div class="src" style="color:#505a5f">No guard changes.</div>';
+            var replay='';
+            if(rep){
+              replay='<div style="margin-top:10px"><b>Shadow replay:</b> '+rep.changedCount+' of '+
+                rep.totalCount+' cases would change.</div>'+
+                (rep.results||[]).filter(function(x){return x.changed;}).map(function(x){
+                  return '<div class="src"><span>'+esc(x.caseRef)+': '+esc(x.oldEffect)+' becomes '+
+                    esc(x.newEffect)+'</span><span class="pill p-missing">would change</span></div>';
+                }).join('');
+            }
+            var statusPill=c.status==='PROPOSED'?'<span class="tag t-y">staged</span>':
+              (c.status==='HELD'?'<span class="tag" style="background:#d4351c;color:#fff">held</span>':
+               '<span class="tag t-g">activated</span>');
+            var action=c.status==='PROPOSED'
+              ? '<div style="margin-top:12px"><span class="btn" data-activate="'+esc(c.id)+'">Activate on 1 Oct 2026</span>'+
+                '<span class="actStatus" style="margin-left:12px;font-size:14px;color:#505a5f"></span></div>'
+              : (c.status==='HELD'?'<div class="diffnote" style="margin-top:10px">'+esc((c.conflictReason||''))+'</div>':'');
+            return '<div class="sl" style="margin-bottom:16px"><div class="r"><span class="k">'+
+              esc(c.policyId)+' '+esc(c.baseVersion)+' to '+esc(c.proposedVersion)+' '+statusPill+'</span>'+
+              '<span class="vv">'+esc((c.sources[0]||{}).title||'')+'</span></div>'+
+              '<div class="h2" style="margin-top:10px">Proposed rule changes</div>'+guards+replay+action+'</div>';
+          }).join('');
+          wireActivateButtons();
+        });
+      })
+      .catch(function(err){box.textContent='Could not reach Authority ('+err.message+').';});
+  }
+  function wireActivateButtons(){
+    document.querySelectorAll('[data-activate]').forEach(function(btn){
+      btn.addEventListener('click',function(){
+        var id=btn.getAttribute('data-activate');
+        var status=btn.parentNode.querySelector('.actStatus');
+        status.textContent='Running the supersession…';
+        fetch(AUTHORITY_API+'/policy-changes/'+encodeURIComponent(id)+'/activate',{
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({approver:'Policy Owner, Housing',effectiveFrom:'2026-10-01T00:00:00Z'})
+        }).then(function(r){return r.json();}).then(function(o){
+          if(o.result){
+            status.innerHTML='Activated as <b>'+esc(o.result.newVersion)+'</b>, effective 1 Oct 2026. '+
+              o.result.impactedCertificates.length+' certificate(s) flagged for review. Ledgered.';
+            renderPolicyVersions();
+          } else {
+            status.textContent='Activation refused: '+(o.rejectionReason||'blocked');
+          }
+        }).catch(function(err){status.textContent='Activation failed ('+err.message+').';});
+      });
+    });
+  }
+  renderStagedChanges();
 
   // Sprint 3: the Proof pack renders from real LedgerRows, all seven sections,
   // with the live whole-chain verification result at the top. Read-only.

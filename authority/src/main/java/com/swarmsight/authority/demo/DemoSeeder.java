@@ -9,6 +9,16 @@ import com.swarmsight.authority.capture.CaptureService;
 import com.swarmsight.authority.decision.DecisionRequest;
 import com.swarmsight.authority.decision.DecisionService;
 import com.swarmsight.authority.decision.Verdict;
+import com.swarmsight.authority.policy.Guard;
+import com.swarmsight.authority.policy.Guard.Clause;
+import com.swarmsight.authority.policy.Guard.Clause.Op;
+import com.swarmsight.authority.policy.Level;
+import com.swarmsight.authority.workbench.PolicyChange;
+import com.swarmsight.authority.workbench.PolicyWorkbench;
+import com.swarmsight.authority.workbench.ProposeRequest;
+import com.swarmsight.authority.workbench.ProposeRequest.SourceInput;
+import com.swarmsight.authority.workbench.SourceDocument;
+import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,12 +49,14 @@ public class DemoSeeder implements ApplicationRunner {
     private final DecisionService decisionService;
     private final CaptureService captureService;
     private final CertificationService certificationService;
+    private final PolicyWorkbench policyWorkbench;
 
     public DemoSeeder(DecisionService decisionService, CaptureService captureService,
-            CertificationService certificationService) {
+            CertificationService certificationService, PolicyWorkbench policyWorkbench) {
         this.decisionService = decisionService;
         this.captureService = captureService;
         this.certificationService = certificationService;
+        this.policyWorkbench = policyWorkbench;
     }
 
     @Override
@@ -77,9 +89,27 @@ public class DemoSeeder implements ApplicationRunner {
         CertificationService.Outcome outcome = certificationService.certify(
                 new CompliantAgent(), AGENT, "swarmsight-arena", "Head of Housing Service");
 
-        log.info("Demo seed: case {} resolved to {} ({}) at seq {}; agent {} certified={} ceiling={}",
+        // Stage the section 21 abolition as a proposed policy change, and preview
+        // it by shadow replay, so the Policy versions screen shows a real staged
+        // change awaiting human activation.
+        Guard section21 = new Guard(
+                "section-21-ground-removed",
+                List.of(new Clause("section_21_ground", Op.IS_TRUE)),
+                Level.L4_HUMAN, "SECTION_21_ABOLISHED",
+                "Section 21 no-fault eviction grounds are abolished under the Renters Reform Act. "
+                        + "Held for officer review.",
+                "Renters Reform Act 2025 s.21");
+        SourceDocument source = new SourceDocument(
+                "https://www.legislation.gov.uk/renters-reform-2025/section/21",
+                "2025-enacted", "sha256:9f1c2d7e4a", "Renters Reform Act 2025, section 21 abolition");
+        PolicyChange change = policyWorkbench.propose(new ProposeRequest(
+                "HA-09", "v7", "v8", List.of(new SourceInput(source, List.of(section21), List.of()))));
+        policyWorkbench.replay(change);
+
+        log.info("Demo seed: case {} {} ({}) seq {}; agent {} certified={} ceiling={}; staged change {} status={}",
                 CASE, verdict.effect(), verdict.reasonCode(), verdict.seq(),
                 AGENT, outcome.certificate() != null,
-                outcome.certificate() == null ? "none" : outcome.certificate().ceiling());
+                outcome.certificate() == null ? "none" : outcome.certificate().ceiling(),
+                change.id(), change.status());
     }
 }

@@ -21,10 +21,12 @@ import org.springframework.stereotype.Repository;
 public class PolicyRepository {
 
     private final JdbcTemplate jdbc;
+    private final ObjectMapper objectMapper;
     private final RowMapper<PolicyVersion> mapper;
 
     public PolicyRepository(JdbcTemplate jdbc, ObjectMapper objectMapper) {
         this.jdbc = jdbc;
+        this.objectMapper = objectMapper;
         this.mapper = (rs, n) -> new PolicyVersion(
                 rs.getString("policy_id"),
                 rs.getString("version"),
@@ -63,5 +65,29 @@ public class PolicyRepository {
         return jdbc.query(
                 "SELECT * FROM policies WHERE policy_id = ? ORDER BY effective_from DESC",
                 mapper, policyId);
+    }
+
+    /**
+     * Insert a new policy version. The Workbench compiles a candidate into one of
+     * these on activation. INSERT is allowed; the table still rejects mutation, so
+     * a version is never edited once written.
+     */
+    public void insert(PolicyVersion v) {
+        jdbc.update(
+                "INSERT INTO policies (policy_id, version, effective_from, required_inputs, action_floors, "
+                        + "guards, created_at) VALUES (?, ?, ?, CAST(? AS jsonb), CAST(? AS jsonb), "
+                        + "CAST(? AS jsonb), ?) ON CONFLICT (policy_id, version) DO NOTHING",
+                v.policyId(), v.version(),
+                OffsetDateTime.ofInstant(v.effectiveFrom(), java.time.ZoneOffset.UTC),
+                write(v.requiredInputs()), write(v.actionFloors()), write(v.guards()),
+                OffsetDateTime.ofInstant(Instant.now(), java.time.ZoneOffset.UTC));
+    }
+
+    private String write(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not serialise policy JSON", e);
+        }
     }
 }
