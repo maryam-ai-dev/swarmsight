@@ -22,12 +22,18 @@ stop.
   the Sprint 2 stub. A suspended, expired, or revoked certificate is now refused
   at issuance (BLOCK), so a fresh DecisionRequest mints no capability, closing the
   gap where containment held everywhere except the issuance path.
-- An allow requires a present, ACTIVE certificate, the requested action in its
-  certified set, and the level within its ceiling. An unreadable store fails
-  closed to block. A decision whose actor holds no certificate is decided on
-  policy alone (the prior behaviour), so enforcement begins once an agent is
-  certified.
-- The certificate status that applied is recorded on the decision's LedgerRow.
+- The certified regime is the default and fails closed. A governed decision with
+  a present certificate requires it to be ACTIVE, the action in its certified
+  set, and the level within its ceiling; with no certificate it blocks; an
+  unreadable store blocks.
+- The un-governed, policy-only path is an explicit, named exemption, not the
+  absence of a certificate: it is reached only by the Arena bootstrap context (a
+  method argument, not a request field) or a configured shadow-actor list
+  (`swarmsight.governance.shadow-actors`, empty by default, the demo fixtures
+  named in config). An unregistered, uncertified actor is blocked.
+- The regime that applied (ACTIVE, SUSPENDED, MISSING, EXEMPT, ...) is recorded
+  on the decision's LedgerRow, so the audit shows which decisions ran under the
+  exemption.
 - The decision package reads certificates through a port it owns, implemented by
   an adapter in the arena package, so no package cycle is introduced.
 

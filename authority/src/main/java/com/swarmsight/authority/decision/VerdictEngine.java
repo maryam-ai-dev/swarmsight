@@ -39,12 +39,18 @@ public class VerdictEngine {
                     "Action " + req.action() + " is not permitted under " + label + ".",
                     policy.version(), req);
         }
-        // The certificate, read live. Fail closed on an unreadable store or a
-        // certificate that is present but not ACTIVE or not certified for the
-        // action. A missing certificate is the un-governed policy-only path.
+        // The certificate, read live. Fail closed on an unreadable store, a
+        // governed decision with no certificate, or a certificate that is present
+        // but not ACTIVE or not certified for the action. Only the explicit EXEMPT
+        // path is decided on policy alone.
         if (cert.presence() == CertificateCheck.Presence.UNREADABLE) {
             return structural(Effect.BLOCK, ReasonCode.CERTIFICATE_UNREADABLE,
                     "The certificate store could not be read; failing closed.", policy.version(), req);
+        }
+        if (cert.presence() == CertificateCheck.Presence.MISSING) {
+            return structural(Effect.BLOCK, ReasonCode.CERTIFICATE_MISSING,
+                    "This decision is governed but the agent holds no certificate; failing closed.",
+                    policy.version(), req);
         }
         if (cert.present()) {
             if (!cert.active()) {

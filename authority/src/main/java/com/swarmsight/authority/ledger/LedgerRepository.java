@@ -63,9 +63,10 @@ public class LedgerRepository {
         return jdbc.query("SELECT * FROM ledger_rows WHERE run_id = ? ORDER BY seq", MAPPER, runId);
     }
 
+    /** The latest decision row for a case, the one the Case surface renders. */
     public Optional<LedgerRow> findLatestByCaseRef(String caseRef) {
         return jdbc.query(
-                "SELECT * FROM ledger_rows WHERE case_ref = ? ORDER BY seq DESC LIMIT 1",
+                "SELECT * FROM ledger_rows WHERE case_ref = ? AND intent = 'decision' ORDER BY seq DESC LIMIT 1",
                 MAPPER, caseRef).stream().findFirst();
     }
 

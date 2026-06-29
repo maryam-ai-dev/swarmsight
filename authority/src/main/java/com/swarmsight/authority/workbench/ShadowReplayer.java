@@ -20,9 +20,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class ShadowReplayer {
 
-    // Replay is about policy effect, not certificates, so it runs the policy-only
-    // path.
-    private static final CertificateCheck REPLAY_CERT = CertificateCheck.none();
+    // Replay is about policy effect, not certificates, so it runs the explicit
+    // policy-only exemption.
+    private static final CertificateCheck REPLAY_CERT = CertificateCheck.exempt();
 
     private final VerdictEngine verdictEngine;
 

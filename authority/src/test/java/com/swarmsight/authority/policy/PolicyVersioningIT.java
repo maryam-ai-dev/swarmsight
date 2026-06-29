@@ -47,7 +47,7 @@ class PolicyVersioningIT {
     @Autowired private TestRestTemplate rest;
 
     // Policy versioning is about policy effect, not certificates: policy-only path.
-    private final CertificateCheck validCert = CertificateCheck.none();
+    private final CertificateCheck validCert = CertificateCheck.exempt();
 
     private Map<String, Object> evictionInputs(boolean evidencePresent) {
         return Map.of(

@@ -41,12 +41,18 @@ class CertificateEnforcementIT {
 
     @Autowired private CertificationService certificationService;
     @Autowired private CapabilityBroker broker;
+    @Autowired private DecisionService decisionService;
     @Autowired private IncidentService incidentService;
     @Autowired private CertificateRepository certificateRepository;
     @Autowired private LedgerRepository ledgerRepository;
     @Autowired private JdbcTemplate jdbc;
 
     private static final String CONNECTOR = "mock-case-system";
+
+    private DecisionRequest decisionFor(String requestId, String caseRef, String actor) {
+        return new DecisionRequest(requestId, "run-" + requestId, caseRef, actor, "HA-09", "draft_response",
+                Map.of("tenancy_status", "secure", "eviction_risk", false, "dependent_children", false));
+    }
 
     private void certify(String agentId) {
         certificationService.certify(new CompliantAgent(), agentId, "swarmsight-arena", "Head of Service");
@@ -111,6 +117,21 @@ class CertificateEnforcementIT {
         assertThat(after.verdict().effect()).isEqualTo(Effect.BLOCK);
         assertThat(after.verdict().reasonCode()).isEqualTo(ReasonCode.CERTIFICATE_NOT_ACTIVE);
         assertThat(after.capability()).isNull();
+    }
+
+    @Test
+    void aGovernedDecisionWithNoCertificateBlocksButTheBootstrapExemptionProceeds() {
+        // The failure case: an unregistered, uncertified actor reaching the
+        // governed path with no certificate is blocked, not run under policy.
+        Verdict governed = decisionService.decide(decisionFor("ungov-1", "CASE-UNGOV", "fresh-agent"));
+        assertThat(governed.effect()).isEqualTo(Effect.BLOCK);
+        assertThat(governed.reasonCode()).isEqualTo(ReasonCode.CERTIFICATE_MISSING);
+
+        // The explicit Arena bootstrap exemption, for the same uncertified actor,
+        // is decided on policy alone and proceeds.
+        Verdict bootstrap = decisionService.decide(
+                decisionFor("boot-1", "CASE-BOOT", "fresh-agent"), GovernanceContext.BOOTSTRAP);
+        assertThat(bootstrap.effect()).isEqualTo(Effect.ALLOW);
     }
 
     @Test

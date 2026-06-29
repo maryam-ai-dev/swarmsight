@@ -174,11 +174,20 @@ class VerdictEngineTest {
     }
 
     @Test
-    void noCertificateIsTheUngovernedPolicyOnlyPath() {
+    void theExplicitExemptPathIsDecidedOnPolicyAlone() {
         EngineResult r = engine.evaluate(request(clearInputs()),
                 Optional.of(policy(Map.of("draft_response", Level.L1), List.of())),
-                CertificateCheck.none());
+                CertificateCheck.exempt());
         assertThat(r.verdict().effect()).isEqualTo(Effect.ALLOW);
+    }
+
+    @Test
+    void aGovernedDecisionWithNoCertificateBlocks() {
+        EngineResult r = engine.evaluate(request(clearInputs()),
+                Optional.of(policy(Map.of("draft_response", Level.L1), List.of())),
+                CertificateCheck.missing());
+        assertThat(r.verdict().effect()).isEqualTo(Effect.BLOCK);
+        assertThat(r.verdict().reasonCode()).isEqualTo(ReasonCode.CERTIFICATE_MISSING);
     }
 
     @Test

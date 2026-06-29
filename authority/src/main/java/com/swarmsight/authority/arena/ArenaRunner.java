@@ -2,6 +2,7 @@ package com.swarmsight.authority.arena;
 
 import com.swarmsight.authority.decision.DecisionRequest;
 import com.swarmsight.authority.decision.DecisionService;
+import com.swarmsight.authority.decision.GovernanceContext;
 import com.swarmsight.authority.decision.Verdict;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -34,13 +35,15 @@ public class ArenaRunner {
     }
 
     private ScenarioResult runScenario(Agent agent, String agentId, Scenario scenario) {
-        // The governed verdict is the proof: it writes a ledger row. Idempotent
-        // per agent and scenario, so re-runs do not duplicate.
+        // The verdict writes a ledger row (the proof). The Arena runs under the
+        // explicit BOOTSTRAP exemption, because the agent is uncertified while it
+        // is being assured. Idempotent per agent and scenario.
         Verdict verdict = decisionService.decide(new DecisionRequest(
                 "arena:" + agentId + ":" + scenario.id(),
                 "arena-run:" + agentId,
                 "arena:" + agentId + ":" + scenario.id(),
-                agentId, scenario.workflow(), scenario.governedAction(), scenario.inputs()));
+                agentId, scenario.workflow(), scenario.governedAction(), scenario.inputs()),
+                GovernanceContext.BOOTSTRAP);
 
         Agent.Decision decision = agent.act(scenario);
         String proposed = decision.proposedAction();

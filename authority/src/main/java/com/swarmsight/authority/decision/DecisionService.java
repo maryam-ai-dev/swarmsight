@@ -53,7 +53,17 @@ public class DecisionService {
         this.objectMapper = objectMapper;
     }
 
+    /** Decide under the governed regime, the default for every external path. */
     public Verdict decide(DecisionRequest req) {
+        return decide(req, GovernanceContext.GOVERNED);
+    }
+
+    /**
+     * Decide under an explicit governance context. GOVERNED fails closed on a
+     * missing certificate; BOOTSTRAP is the Arena's exemption. The context is a
+     * method argument, never a request field, so it cannot be set by a caller.
+     */
+    public Verdict decide(DecisionRequest req, GovernanceContext context) {
         // Idempotent replay: a request_id seen before returns its stored verdict
         // and writes nothing.
         Optional<LedgerRow> seen = ledgerRepository.findByRequestId(req.requestId());
@@ -63,7 +73,7 @@ public class DecisionService {
 
         try {
             Instant now = Instant.now();
-            CertificateCheck certificate = certificateService.check(req.actor());
+            CertificateCheck certificate = certificateService.check(req.actor(), context);
             Optional<PolicyVersion> policy = policyRepository.resolve(req.workflow(), now);
             EngineResult result = verdictEngine.evaluate(req, policy, certificate);
             Verdict verdict = result.verdict();

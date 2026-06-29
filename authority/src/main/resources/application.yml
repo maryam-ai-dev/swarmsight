@@ -21,3 +21,9 @@ swarmsight:
   # Where the live agent (Intelligence) is reached for assurance runs.
   intelligence:
     base-url: ${INTELLIGENCE_BASE_URL:http://localhost:8000}
+  governance:
+    # The certified regime is the default and fails closed. These named actors
+    # are the explicit exemption: demo and trial fixtures that operate outside
+    # the certified regime, decided on policy alone. Empty this for production;
+    # any unlisted, uncertified actor is blocked. See DECISIONS.md.
+    shadow-actors: ${SHADOW_ACTORS:agent-1,agent-housing-1}

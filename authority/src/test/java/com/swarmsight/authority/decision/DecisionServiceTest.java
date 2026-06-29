@@ -50,7 +50,7 @@ class DecisionServiceTest {
     @Test
     void internalErrorHoldsAndWritesNothing() {
         when(ledgerRepository.findByRequestId("req-1")).thenReturn(Optional.empty());
-        when(certificateService.check("agent-1")).thenReturn(CertificateCheck.none());
+        when(certificateService.check(eq("agent-1"), any())).thenReturn(CertificateCheck.exempt());
         when(policyRepository.resolve(eq("HA-09"), any())).thenReturn(Optional.empty());
         when(verdictEngine.evaluate(any(), any(), any())).thenThrow(new RuntimeException("boom"));
 

@@ -543,15 +543,35 @@ ceiling. Any failure blocks. If the store cannot be read, the verdict blocks; th
 read error is never an allow. The certificate status that applied is recorded on
 the decision's LedgerRow.
 
-### No certificate present is the un-governed path, not a block
+### The certified regime is the default; the un-governed path is an explicit, named exemption
 
-A decision whose actor holds no certificate is decided on policy alone, the
-behaviour before this change. This is deliberate: the platform serves both
-certified agents and direct, uncertified policy decisions (and an agent is
-necessarily uncertified while the Arena is still deciding whether to certify it).
-Enforcement begins the moment an agent holds a certificate. Once it does, a
-suspended, expired, or revoked certificate blocks every path, issuance included,
-not just the broker and the gate. This is the gap that is now closed.
+A governed decision that finds no certificate blocks. That is the failure case:
+something reached the verdict path expecting to be governed and there was nothing
+to govern it. The un-governed, policy-only path is not a fall-through reached by
+the mere absence of a certificate; it is reached only on purpose, by one of two
+explicit, audited exemptions:
+
+- The Arena bootstrap context. An agent is necessarily uncertified while the
+  Arena is still deciding whether to certify it, so Arena scenario decisions run
+  under an explicit BOOTSTRAP context that takes the policy-only path. This is a
+  code path, not a request field, so it cannot be set by an external caller.
+- Registered uncertified shadow actors. A configured, named list
+  (`swarmsight.governance.shadow-actors`) of actors that operate outside the
+  certified regime. It is empty by default; the demo populates it with its two
+  fixture actors, which are explicitly outside the regime for the supervised
+  trial. A reviewer can read exactly which actors are exempt and why.
+
+Anything else is governed. A governed decision with a present certificate
+requires it to be ACTIVE; with no certificate, it blocks. This turns
+"no certificate runs under policy" from a silent default into a decision someone
+had to make, named in config and visible in the audit, while the certified
+regime fails closed everywhere, issuance included.
+
+The full strict end state, where every actor including the demo fixtures is
+either certified or carries an explicit per-decision exemption, is a clearly
+scoped follow-up. This change narrows the door to that end state without the
+invasive threading; the seam (the governance context, the presence states, and
+the named registry) is what the follow-up builds on.
 
 ### The port keeps the dependency clean
 

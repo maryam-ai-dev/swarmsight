@@ -4,10 +4,11 @@ import com.swarmsight.authority.policy.Level;
 import java.util.Set;
 
 /**
- * What the verdict path knows about an agent's certificate at decision time:
- * whether one is present, its status and ceiling and certified actions if so, or
- * that the store could not be read. Anything other than a present, ACTIVE
- * certificate is fail-closed; a missing one is the un-governed policy-only path.
+ * What the verdict path knows about an agent's certificate at decision time. The
+ * certified regime is the default and fails closed: a present certificate must be
+ * ACTIVE, and a governed decision with no certificate is MISSING and blocks. The
+ * policy-only EXEMPT path is reached only by an explicit exemption (the Arena
+ * bootstrap or a registered shadow actor), never by mere absence.
  */
 public record CertificateCheck(
         Presence presence,
@@ -16,10 +17,12 @@ public record CertificateCheck(
         Set<String> certifiedActions) {
 
     public enum Presence {
-        /** No certificate for this agent; decided on policy alone. */
-        NONE,
+        /** Explicitly outside the certified regime; decided on policy alone. */
+        EXEMPT,
         /** A certificate is present; its status governs the decision. */
         PRESENT,
+        /** Governed, but no certificate was found. The failure case: block. */
+        MISSING,
         /** The store could not be read; fail closed. */
         UNREADABLE
     }
@@ -32,8 +35,14 @@ public record CertificateCheck(
         return present() && "ACTIVE".equals(status);
     }
 
-    public static CertificateCheck none() {
-        return new CertificateCheck(Presence.NONE, "NONE", null, Set.of());
+    /** The explicit un-governed exemption: decided on policy alone. */
+    public static CertificateCheck exempt() {
+        return new CertificateCheck(Presence.EXEMPT, "EXEMPT", null, Set.of());
+    }
+
+    /** Governed, but no certificate. Fails closed. */
+    public static CertificateCheck missing() {
+        return new CertificateCheck(Presence.MISSING, "MISSING", null, Set.of());
     }
 
     public static CertificateCheck unreadable() {

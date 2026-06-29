@@ -11,6 +11,7 @@ public final class ReasonCode {
     public static final String POLICY_UNRESOLVABLE = "POLICY_UNRESOLVABLE";
     public static final String CERTIFICATE_INVALID = "CERTIFICATE_INVALID";
     public static final String CERTIFICATE_NOT_ACTIVE = "CERTIFICATE_NOT_ACTIVE";
+    public static final String CERTIFICATE_MISSING = "CERTIFICATE_MISSING";
     public static final String CERTIFICATE_UNREADABLE = "CERTIFICATE_UNREADABLE";
     public static final String ACTION_NOT_CERTIFIED = "ACTION_NOT_CERTIFIED";
     public static final String REQUIRED_INPUT_ABSENT = "REQUIRED_INPUT_ABSENT";
