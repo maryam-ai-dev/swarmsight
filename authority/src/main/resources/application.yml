@@ -18,3 +18,6 @@ swarmsight:
   # Seed the demo case HX-4471 on startup so the Case surface has a real verdict
   # to render. Idempotent. Switch off in tests.
   demo-seed: true
+  # Where the live agent (Intelligence) is reached for assurance runs.
+  intelligence:
+    base-url: ${INTELLIGENCE_BASE_URL:http://localhost:8000}

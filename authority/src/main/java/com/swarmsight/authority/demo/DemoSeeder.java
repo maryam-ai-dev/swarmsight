@@ -1,5 +1,7 @@
 package com.swarmsight.authority.demo;
 
+import com.swarmsight.authority.arena.CertificationService;
+import com.swarmsight.authority.arena.CompliantAgent;
 import com.swarmsight.authority.capture.CaptureRequests.ApproveRequest;
 import com.swarmsight.authority.capture.CaptureRequests.AuthorRequest;
 import com.swarmsight.authority.capture.CaptureRequests.EditRequest;
@@ -32,12 +34,17 @@ public class DemoSeeder implements ApplicationRunner {
     private static final String CASE = "HX-4471";
     private static final String RUN = "run-hx-4471";
 
+    private static final String AGENT = "housing-appeals-agent-v3";
+
     private final DecisionService decisionService;
     private final CaptureService captureService;
+    private final CertificationService certificationService;
 
-    public DemoSeeder(DecisionService decisionService, CaptureService captureService) {
+    public DemoSeeder(DecisionService decisionService, CaptureService captureService,
+            CertificationService certificationService) {
         this.decisionService = decisionService;
         this.captureService = captureService;
+        this.certificationService = certificationService;
     }
 
     @Override
@@ -64,7 +71,15 @@ public class DemoSeeder implements ApplicationRunner {
                 "First-tier Tribunal (Property Chamber)",
                 "Appeals paragraph added to the closing of the letter."));
 
-        log.info("Demo seed: case {} resolved to {} ({}) at seq {}, with author, edit, approve captured",
-                CASE, verdict.effect(), verdict.reasonCode(), verdict.seq());
+        // Certify the demo agent deterministically with an in-process compliant
+        // agent (the live endpoints exercise Intelligence over HTTP). The builder
+        // and approver differ, as certification requires.
+        CertificationService.Outcome outcome = certificationService.certify(
+                new CompliantAgent(), AGENT, "swarmsight-arena", "Head of Housing Service");
+
+        log.info("Demo seed: case {} resolved to {} ({}) at seq {}; agent {} certified={} ceiling={}",
+                CASE, verdict.effect(), verdict.reasonCode(), verdict.seq(),
+                AGENT, outcome.certificate() != null,
+                outcome.certificate() == null ? "none" : outcome.certificate().ceiling());
     }
 }

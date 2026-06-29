@@ -27,6 +27,7 @@ services:
       AUTHORITY_DB_URL: jdbc:postgresql://postgres:5432/swarmsight
       AUTHORITY_DB_USER: swarmsight
       AUTHORITY_DB_PASSWORD: swarmsight
+      INTELLIGENCE_BASE_URL: http://intelligence:8000
     ports:
       - "8080:8080"
     depends_on:

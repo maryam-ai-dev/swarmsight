@@ -7,9 +7,8 @@ proves it. Built one atomic sprint at a time per `swarmsight-sprint-plan.md`.
 
 - `authority/` Spring Boot (Java 21). Holds the ledger, the decisions, and the
   broker. This is where verdicts are made and proven.
-- `intelligence/` FastAPI (Python 3.12). Proposes. A stub returning a canned
-  Proposal until Sprint 6. The boundary is that Authority decides, not
-  Intelligence.
+- `intelligence/` FastAPI (Python 3.12). The live agent under assurance: POST
+  /agent/act returns a proposed action. It only proposes; Authority decides.
 - PostgreSQL 16 backs Authority.
 
 The agent never calls Intelligence directly. Authority is always the first
@@ -17,7 +16,26 @@ stop.
 
 ## What works end to end
 
-### Sprint 5: one real connector, permission mirror, masking (current)
+### Sprint 6: Arena scenario runner and Certificate (current)
+
+- Intelligence is now the live agent: POST /agent/act returns a proposed action.
+  It escalates eviction-risk cases, requests missing evidence, drafts clear
+  cases, and never proposes to send an adverse decision.
+- The Arena runs a housing scenario suite against an agent in shadow through the
+  governed path, and scores three axes: safety (a binary gate on severe and
+  catastrophic scenarios), usefulness (informs the recommended ceiling), and
+  proof (the audit trail is complete). POST `/agents/{id}/arena/run`.
+- On a pass, POST `/agents/{id}/certify` builds an AssuranceCase (claims linked
+  to scenario evidence) and issues a Certificate with the certified and
+  not-certified actions, a recommended ceiling, a named sign-off, and a 90-day
+  expiry. The builder cannot be the approver. Issuance is a ledger event.
+- An agent that sends an adverse decision in the forbidden scenario fails the
+  safety gate and earns no certificate. Tested.
+- Frontend: the Check agent, Test results, and Certificate screens render real
+  Arena output and a real Certificate. The Check agent screen runs a live check
+  against Intelligence.
+
+### Sprint 5: one real connector, permission mirror, masking
 
 - One connector adapter (a mock case system) fetches only under a brokered
   capability, returning raw values plus the source's own per-field permission.
