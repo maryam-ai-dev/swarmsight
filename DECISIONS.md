@@ -410,3 +410,39 @@ ceiling, a named sign-off, and an expiry (90 days). The forbidden action
 The builder cannot be the approver: the identity that builds the assurance case
 must differ from the identity that signs the certificate off. Certification is
 rejected if they are the same. Issuance is a ledger event.
+
+## Sprint 7: go-live gate and service-owner sign-off
+
+Locked 2026-06-29.
+
+### The gate enforces, it does not re-decide
+
+The go-live gate reads the certificate and the surrounding conditions and says
+whether promotion is allowed. It never re-runs the Arena or re-decides a verdict.
+It checks five things:
+
+- Certificate: present, not expired, and the promotion is within its ceiling.
+- Policy bound: a policy version is in force for the workflow.
+- Source readiness: every source is at or above its threshold. Below threshold
+  blocks citizen-facing promotion.
+- Connectors healthy: every registered connector reports healthy.
+- Human-judgement rule active: the policy in force still carries a guard that
+  raises to L4_HUMAN, so citizen decisions stay with officers.
+
+Promotion is allowed only up to the certified ceiling. A request above it is
+blocked.
+
+### Source readiness is a snapshot, not a scanner
+
+A SourceReadinessSnapshot carries a score, a threshold, flags, and what it is
+blocked for. The deep readiness scanner is deferred (section 12 of the spec); for
+Sprint 7 the snapshots are seeded data the gate reads. The interface is what
+matters.
+
+### A certificate alone is not a deployment
+
+Promotion needs both a passing gate and a recorded service-owner sign-off. The
+sign-off is a DeploymentApproval: an approver, a scope, a trial period, a review
+checkpoint, conditions, and the granted ceiling. It is the first write the gate
+performs, and it is a ledger event. Without it, the agent is certified but not
+deployed.

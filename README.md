@@ -16,7 +16,26 @@ stop.
 
 ## What works end to end
 
-### Sprint 6: Arena scenario runner and Certificate (current)
+### Sprint 7: go-live gate and service-owner sign-off (current)
+
+- The go-live gate reads the certificate and enforces it, it does not re-decide.
+  GET `/agents/{id}/go-live` checks: certificate present and unexpired, policy
+  bound, sources at or above threshold, connectors healthy, and the
+  human-judgement rule active. Promotion is allowed only up to the certified
+  ceiling.
+- A SourceReadinessSnapshot (score, threshold, flags, what it is blocked for) is
+  seeded data the gate reads. GET `/sources/readiness` serves it. Sources below
+  threshold block citizen-facing promotion.
+- The service-owner sign-off is the first write the gate performs. POST
+  `/agents/{id}/deployment-approval` records the approver, scope, trial period,
+  review checkpoint, conditions, and granted ceiling, and refuses if the gate
+  blocks. A valid certificate alone is not a deployment. The approval is a ledger
+  event.
+- Frontend: the Go-live check renders the real certificate, readiness, and
+  connector status, with the sign-off as a real write. A new Source readiness
+  screen renders the real snapshots.
+
+### Sprint 6: Arena scenario runner and Certificate
 
 - Intelligence is now the live agent: POST /agent/act returns a proposed action.
   It escalates eviction-risk cases, requests missing evidence, drafts clear

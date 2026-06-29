@@ -376,18 +376,24 @@
   <div class="mn">
     <div class="cap">Step 4 of 4 · Approve supervised trial</div>
     <h1>Go-live check</h1>
-    <p class="lead">Promotion request: <b>housing appeals agent v3</b> → live, under certificate <span class="ref">SWS-CERT-HX-V3-0047</span>.</p>
+    <p class="lead" id="gateLead">Loading promotion request from Authority…</p>
     <div class="h2">Checks</div>
-    <div class="chk"><span class="mk">✓</span><span class="tx"><b>Certificate valid</b><div class="d">Issued 28 June 2026, review by 28 Sep 2026</div></span><span class="rt">SWS-CERT-HX-V3-0047</span></div>
-    <div class="chk"><span class="mk">✓</span><span class="tx"><b>Policy bound</b><div class="d">Judged under the version in force today</div></span><span class="rt">HA-09 v7</span></div>
-    <div class="chk"><span class="mk">✓</span><span class="tx"><b>Document sources ready</b><div class="d">Above the 85% readiness threshold</div></span><span class="rt">86%</span></div>
-    <div class="chk"><span class="mk">✓</span><span class="tx"><b>Connections healthy</b><div class="d">Case system, document store, policy library</div></span><span class="rt">healthy</span></div>
-    <div class="chk"><span class="mk">✓</span><span class="tx"><b>Human-judgement rule active</b><div class="d">Citizen decisions and case closures stay with officers</div></span><span class="rt">active</span></div>
-    <div class="verdict">
-      <div class="vh"><span class="tag">Allowed</span><span class="t">Promotion allowed for L2 actions only</span></div>
-      <div class="vb">The agent may prepare summaries, request documents, and draft responses in live service. <span class="lim">Sending citizen decisions, closing cases, and releasing records remain officer-only.</span></div>
-    </div>
-    <div class="nav2"><span class="lk" data-t="certificate">← Back</span><span class="btn" data-t="officer">Promote to supervised live</span></div>
+    <div id="gateChecks"></div>
+    <div class="verdict" id="gateVerdict"></div>
+    <div class="nav2"><span class="lk" data-t="certificate">← Back</span><span style="display:flex;gap:18px;align-items:center"><span class="lk" data-t="sources">Source readiness</span><span class="btn" id="promoteBtn" data-t="officer">Promote to supervised live</span></span></div>
+    <div id="promoteStatus" style="margin-top:12px;font-size:14px;color:#505a5f"></div>
+  </div>
+</section>
+
+<!-- ===== SOURCE READINESS ===== -->
+<section class="screen reg-gov" id="sources">
+  <div class="gm"><span class="sq"></span><span class="nm">SwarmSight <span>· Agent assurance</span></span></div>
+  <div class="gp"><span class="tag t-b">Beta</span><span>The gate reads source readiness before allowing citizen-facing promotion.</span></div>
+  <div class="mn">
+    <div class="crumb"><span class="lk" data-t="gate">Go-live check</span> › Source readiness</div>
+    <h1>Source readiness</h1>
+    <p class="lead">Each source is scored against a readiness threshold. A source below its threshold blocks citizen-facing promotion. These snapshots are the ones Authority holds.</p>
+    <div id="sourcesList" style="margin-top:18px">Loading source readiness from Authority…</div>
   </div>
 </section>
 
@@ -706,6 +712,87 @@
       });
   }
   renderAssurance();
+
+  // Sprint 7: the Go-live check renders the real gate (certificate, readiness,
+  // connectors, human rule, ceiling), and the sign-off is a real write.
+  function renderGate(){
+    fetch(AUTHORITY_API+'/agents/'+encodeURIComponent(AGENT_ID)+'/go-live')
+      .then(function(r){if(!r.ok){throw new Error('HTTP '+r.status);}return r.json();})
+      .then(function(g){
+        document.getElementById('gateLead').innerHTML=
+          'Promotion request: <b>housing appeals agent v3</b> to live, under certificate '+
+          '<span class="ref">'+esc(g.certificate.id||'none')+'</span>.';
+        var minScore=g.sources.length?Math.min.apply(null,g.sources.map(function(s){return s.score;})):0;
+        var checks=[
+          ['Certificate valid', g.certificate.present && !g.certificate.expired, esc(g.certificate.id||'none')],
+          ['Policy bound', g.policyBound, esc(g.policyVersion||'none')],
+          ['Document sources ready', g.sourcesReady, minScore+'% (lowest)'],
+          ['Connections healthy', g.connectorsHealthy, g.connectorsHealthy?'healthy':'unhealthy'],
+          ['Human-judgement rule active', g.humanJudgementActive, g.humanJudgementActive?'active':'inactive'],
+          ['Within certified ceiling', g.ceilingOk, esc(g.requestedCeiling)+' / '+esc(g.certifiedCeiling)]
+        ];
+        document.getElementById('gateChecks').innerHTML=checks.map(function(c){
+          return '<div class="chk"><span class="mk" style="color:'+(c[1]?'#00703c':'#d4351c')+'">'+
+            (c[1]?'✓':'✕')+'</span><span class="tx"><b>'+c[0]+'</b></span><span class="rt">'+c[2]+'</span></div>';
+        }).join('');
+        var v=document.getElementById('gateVerdict');
+        if(g.promotable){
+          v.innerHTML='<div class="vh"><span class="tag">Allowed</span><span class="t">'+esc(g.verdict)+
+            '</span></div><div class="vb">The agent may operate up to '+esc(g.certifiedCeiling)+
+            ', within its certificate. <span class="lim">Sending citizen decisions and closing cases remain officer-only.</span></div>';
+        } else {
+          v.innerHTML='<div class="vh"><span class="tag" style="background:#d4351c;color:#fff">Blocked</span><span class="t">'+
+            esc(g.verdict)+'</span></div><div class="vb">'+g.blockers.map(esc).join(' ')+'</div>';
+        }
+      })
+      .catch(function(err){
+        var l=document.getElementById('gateLead');
+        if(l){l.textContent='Could not reach Authority ('+err.message+').';}
+      });
+  }
+  renderGate();
+
+  function renderSources(){
+    var box=document.getElementById('sourcesList');
+    fetch(AUTHORITY_API+'/sources/readiness')
+      .then(function(r){if(!r.ok){throw new Error('HTTP '+r.status);}return r.json();})
+      .then(function(sources){
+        box.innerHTML=sources.map(function(s){
+          var ready=s.score>=s.threshold;
+          var pill=ready?'<span class="pill p-strong">ready</span>':'<span class="pill p-missing">below threshold</span>';
+          var flags=(s.flags&&s.flags.length)?' · flags: '+s.flags.map(esc).join(', '):'';
+          return '<div class="src"><span><b>'+esc(s.sourceId)+'</b> <span class="meta">'+esc(s.connector)+
+            '</span> · '+s.score+'% against '+s.threshold+'% threshold'+flags+'</span>'+pill+'</div>';
+        }).join('');
+      })
+      .catch(function(err){box.textContent='Could not reach Authority ('+err.message+').';});
+  }
+  renderSources();
+
+  // The sign-off is a real write: the first write the gate performs.
+  var promoteBtn=document.getElementById('promoteBtn');
+  if(promoteBtn){
+    promoteBtn.addEventListener('click',function(){
+      var status=document.getElementById('promoteStatus');
+      status.textContent='Recording the service-owner sign-off…';
+      fetch(AUTHORITY_API+'/agents/'+encodeURIComponent(AGENT_ID)+'/deployment-approval',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({approver:'Head of Housing Service',scope:'Housing appeals, supervised live trial',
+          trialPeriod:'8 weeks',reviewCheckpoint:'review at week 4',
+          conditions:['Officer signs every citizen decision','Daily oversight review']})
+      })
+        .then(function(r){return r.json();})
+        .then(function(o){
+          if(o.approval){
+            status.innerHTML='Signed off by <b>'+esc(o.approval.approver)+'</b> at ceiling <b>'+
+              esc(o.approval.grantedCeiling)+'</b> for '+esc(o.approval.trialPeriod)+'. Recorded in the ledger.';
+          } else {
+            status.textContent='Sign-off refused: '+(o.rejectionReason||'promotion blocked');
+          }
+        })
+        .catch(function(err){status.textContent='Sign-off failed ('+err.message+').';});
+    });
+  }
 
   // The Check agent button also runs a live check against Intelligence.
   var runBtn=document.getElementById('runCheckBtn');
