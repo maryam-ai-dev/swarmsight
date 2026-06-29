@@ -209,3 +209,62 @@ No caching of policy resolution yet. Each decision resolves the version in force
 at its own timestamp with a single indexed query. Caching can come later with a
 key that includes the effective timestamp; doing it now would add a correctness
 risk for no measured gain.
+
+## Sprint 3: proof pack assembly and chain verification
+
+Locked 2026-06-29.
+
+### Three capture intents
+
+Beyond the `decision` intent, work is captured as three more ledger intents,
+written through the same single serialised, hash-chained appender:
+
+- `author`: the service authored a draft. Payload carries the draft text.
+- `edit`: a human edited the draft. Payload carries the new draft text. Written
+  right after the author row, so in an uninterrupted case its prev_hash is the
+  author row's row_hash.
+- `approve`: an officer approved. Payload carries the officer's `reason_code`, a
+  free-text `note`, and the redress fields `appeal_route` and `signposting`.
+  These are distinct from the draft and the diff.
+
+Capture is idempotent on `request_id` like every other write.
+
+### The draft-to-final diff is derived, never stored
+
+The diff is computed at assembly time from the author row's draft and the final
+(latest edit) draft, with a word-level longest-common-subsequence. It is never
+stored, so it can never disagree with the rows it is derived from.
+
+### Chain verification
+
+Verification recomputes, for every row in seq order: the payload_hash from the
+stored payload, the row_hash from the stored fields, and the prev_hash link to
+the row before it (the first row links to the genesis constant). The first
+mismatch is reported with its seq and a reason. An intact chain verifies; any
+tampering, to a payload, a hash, or a link, fails loudly. The proof pack shows
+the live result of verifying the whole ledger at the top.
+
+### The seven sections
+
+The proof pack assembles seven sections from real rows, mirroring the audit
+screen:
+
+1. What happened: a plain narrative of the decision and the human role.
+2. Why review was required: the reason code, brief, and guards that fired with
+   their source.
+3. Decision responsibility: who did what (service vs officer) and the policy
+   applied.
+4. Decision trace: the author, edit, and approve events with actor and time.
+5. Where human judgement entered: the draft-to-final diff and the redress trail
+   (appeal route, where signposting was added).
+6. Sources and access: the inputs the decision saw and what was missing. The
+   permission mirror and masking deepen this in Sprint 5.
+7. Governing rules: certificate, policy, officer, decision time, and the
+   technical verification (ledger entry count, the author/edit/approve hashes,
+   and the export hash).
+
+### Export hash
+
+Export bundles the case's ledger rows and the policy versions they reference
+into one canonical JSON structure and hashes it with the same sha256 over
+canonical bytes used everywhere else. Same input, same export hash, every time.

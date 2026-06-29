@@ -69,6 +69,10 @@ public class LedgerRepository {
                 MAPPER, caseRef).stream().findFirst();
     }
 
+    public List<LedgerRow> findByCaseRef(String caseRef) {
+        return jdbc.query("SELECT * FROM ledger_rows WHERE case_ref = ? ORDER BY seq", MAPPER, caseRef);
+    }
+
     public List<LedgerRow> findAllOrderBySeq() {
         return jdbc.query("SELECT * FROM ledger_rows ORDER BY seq", MAPPER);
     }

@@ -17,7 +17,24 @@ stop.
 
 ## What works end to end
 
-### Sprint 2: policy as versioned data, guards, autonomy (current)
+### Sprint 3: proof pack assembly and chain verification (current)
+
+- Work is captured as three more ledger intents: `author` (the service drafts),
+  `edit` (a human edits), and `approve` (an officer approves, recording a reason,
+  a note, and the redress trail). POST `/cases/{caseRef}/author`, `/edit`,
+  `/approve`. Each is hash-chained and idempotent like every other write.
+- GET `/cases/{caseRef}/proof-pack` assembles the seven sections from real rows,
+  with the live whole-chain verification result at the top and a stable export
+  hash.
+- Chain verification recomputes every payload_hash, row_hash, and prev_hash link.
+  It passes on an intact chain and fails loudly on a tampered payload, hash, or
+  link. Proven by tests.
+- The draft-to-final diff is derived from the author and final rows at assembly
+  time, never stored.
+- Frontend: the Proof pack screen renders from the live endpoint, all seven
+  sections, with the chain-verification banner at the top.
+
+### Sprint 2: policy as versioned data, guards, autonomy
 
 - Policy is versioned data in the `policies` table, each version with an
   `effective_from`. The table rejects UPDATE and DELETE: a change is a new

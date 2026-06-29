@@ -51,6 +51,13 @@ public class PolicyRepository {
                 .stream().findFirst();
     }
 
+    /** A specific version of a policy, if it exists. */
+    public Optional<PolicyVersion> findVersion(String policyId, String version) {
+        return jdbc.query(
+                "SELECT * FROM policies WHERE policy_id = ? AND version = ?",
+                mapper, policyId, version).stream().findFirst();
+    }
+
     /** All versions of a policy, newest effective_from first. */
     public List<PolicyVersion> findVersions(String policyId) {
         return jdbc.query(

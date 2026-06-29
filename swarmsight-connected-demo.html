@@ -482,45 +482,34 @@
 <!-- ===== AUDIT / PROOF PACK ===== -->
 <section class="screen reg-pp" id="audit">
   <div class="wrap">
-    <div class="verify"><span class="m">✓</span><div><div class="t">Record verified</div><div class="d">No breaks in the audit chain. External seal recorded 09:00 UTC.</div></div></div>
+    <div class="verify" id="ppVerify"><span class="m">✓</span><div><div class="t" id="ppVerifyTitle">Record verified</div><div class="d" id="ppVerifyDetail">Verifying the audit chain with Authority…</div></div></div>
     <div class="head"><div><div class="kick">Proof pack</div><h1>Housing appeal HX-4471</h1></div><div class="ref">SWS-CERT-HX-V3-0047</div></div>
 
     <div class="sec"><div class="sn">1 · What happened</div>
-      <p class="body">The service prepared a draft response for housing appeal HX-4471 and set out the evidence. Officer J. Okafor edited the wording and approved the final response. The service did not send, close, or decide the case.</p></div>
+      <p class="body" id="ppNarrative">Loading from the ledger…</p></div>
 
     <div class="sec"><div class="sn">2 · Why officer review was required</div>
-      <div class="why"><b>Eviction risk and dependent children</b> were detected, and the latest eviction notice was missing. Policy HA-09 v7 requires officer judgement for adverse housing outcomes.</div></div>
+      <div class="why" id="ppWhy">Loading…</div></div>
 
     <div class="sec"><div class="sn">3 · Decision responsibility</div>
-      <table>
+      <table id="ppResp">
         <tr><th>Item</th><th>Owner</th></tr>
-        <tr><td>Evidence prepared</td><td><span class="owner svc">Service</span></td></tr>
-        <tr><td>Draft authored</td><td><span class="owner svc">Service</span></td></tr>
-        <tr><td>Final wording</td><td><span class="owner off">Officer</span></td></tr>
-        <tr><td>Decision approved</td><td><span class="owner off">Officer</span></td></tr>
-        <tr><td>Policy applied</td><td><span class="owner">HA-09 v7</span></td></tr>
       </table></div>
 
     <div class="sec"><div class="sn">4 · Decision trace</div>
-      <div class="trace">
-        <div class="tr svc"><div class="rail"><div class="dot">A</div><div class="line"></div></div><div class="c"><div class="ct">Service drafted the citizen letter</div><div class="cm">housing-appeals-agent v3 · 09:14</div></div></div>
-        <div class="tr edit"><div class="rail"><div class="dot">✎</div><div class="line"></div></div><div class="c"><div class="ct">Officer edited the draft</div><div class="cm">J. Okafor · 09:21</div></div></div>
-        <div class="tr appr"><div class="rail"><div class="dot">✓</div></div><div class="c"><div class="ct">Officer approved the decision</div><div class="cm">J. Okafor · 09:22</div></div></div>
-      </div></div>
+      <div class="trace" id="ppTrace">Loading…</div></div>
 
     <div class="sec"><div class="sn">5 · Where human judgement entered</div>
-      <div class="diff"><div class="dh">Agent draft → officer final</div><div class="db">…I am writing to <span class="del">inform you that your application has been refused.</span> <span class="ins">confirm the next steps in your case, and set out how you can appeal.</span></div></div>
-      <div class="diffnote">The officer softened the refusal wording and added appeals signposting. This is the record of discretion applied.</div></div>
+      <div class="diff"><div class="dh">Agent draft → officer final</div><div class="db" id="ppDiff">Loading…</div></div>
+      <div class="diffnote" id="ppDiffNote"></div></div>
 
     <div class="sec"><div class="sn">6 · Sources and access</div>
-      <div class="src"><span>assessment.pdf, p.3 <span class="meta">income evidence</span></span><span class="pill p-strong">strong</span></div>
-      <div class="src"><span>tenancy record <span class="meta">tenancy confirmed</span></span><span class="pill p-strong">strong</span></div>
-      <div class="src"><span>latest eviction notice <span class="meta">required</span></span><span class="pill p-missing">missing</span></div>
-      <div class="withheld"><b>Withheld from the service:</b> National Insurance number <span class="pill p-mask">masked</span> &nbsp; medical notes <span class="pill p-deny">no access</span><br><span style="color:#6f6f69">Reason: not required for this draft. Sensitive field policy applied. The service could not read what it was not given.</span> &nbsp;<span class="lk" data-t="masking">See what the agent could access</span></div></div>
+      <div id="ppSources">Loading…</div>
+      <div class="withheld"><b>Withheld from the service:</b> National Insurance number <span class="pill p-mask">masked</span> &nbsp; medical notes <span class="pill p-deny">no access</span><br><span style="color:#6f6f69">Reason: not required for this draft. Sensitive field policy applied. Masking becomes real in a later sprint.</span> &nbsp;<span class="lk" data-t="masking">See what the agent could access</span></div></div>
 
     <div class="sec"><div class="sn">7 · Governing rules</div>
-      <div class="gov"><span><span class="k">Certificate</span> <span class="v mono">SWS-CERT-HX-V3-0047</span></span><span><span class="k">Policy</span> <span class="v">HA-09 v7</span></span><span><span class="k">Officer</span> <span class="v">J. Okafor</span></span><span><span class="k">Decided</span> <span class="v">28 Jun 2026, 09:22</span></span></div>
-      <details><summary>Show technical verification</summary><div class="inner">ledger entries: 1,247 · no gaps<br>draft hash: a47f…c12<br>edit hash: 9f2c…8e1 · prev a47f…c12<br>approve hash: 5b1e…e90 · prev 9f2c…8e1<br>Merkle root: 7c4d…f019<br>external anchor: 09:00 UTC · export hash on download</div></details></div>
+      <div class="gov" id="ppGov">Loading…</div>
+      <details><summary>Show technical verification</summary><div class="inner" id="ppTech">Loading…</div></details></div>
 
     <div class="wow">This record proves the service prepared the work, but the officer made the decision.</div>
     <div class="acts"><button class="btn">Export proof pack</button><button class="btn sec">Copy FOI summary</button><span class="lk" data-t="case" style="margin-left:auto">← Back to case</span></div>
@@ -621,6 +610,72 @@
       .catch(function(err){box.textContent='Could not reach Authority ('+err.message+').';});
   }
   renderPolicyVersions();
+
+  // Sprint 3: the Proof pack renders from real LedgerRows, all seven sections,
+  // with the live whole-chain verification result at the top. Read-only.
+  function esc(s){var d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML;}
+  function respRow(k,v){return '<tr><td>'+esc(k)+'</td><td><span class="owner">'+esc(v)+'</span></td></tr>';}
+  function renderProofPack(){
+    fetch(AUTHORITY_API+'/cases/'+encodeURIComponent(CASE_REF)+'/proof-pack')
+      .then(function(r){if(!r.ok){throw new Error('HTTP '+r.status);}return r.json();})
+      .then(function(p){
+        var cv=p.chainVerification;
+        document.getElementById('ppVerifyTitle').textContent=cv.ok?'Record verified':'Chain break detected';
+        document.getElementById('ppVerifyDetail').textContent=cv.message;
+        if(!cv.ok){document.getElementById('ppVerify').style.background='#f8d7da';}
+
+        document.getElementById('ppNarrative').textContent=p.whatHappened.narrative;
+
+        var guards=(p.whyReview.guardsFired||[]).map(function(g){
+          return '<div style="margin-top:6px">· <b>'+esc(g.name)+'</b> raises to '+esc(g.raiseTo)+
+            ' <span style="color:#6f6f69">('+esc(g.source)+')</span></div>';}).join('');
+        document.getElementById('ppWhy').innerHTML='<b>'+esc(p.whyReview.reasonCode)+'</b> · '+
+          esc(p.whyReview.brief)+guards;
+
+        var r=p.responsibility;
+        document.getElementById('ppResp').innerHTML='<tr><th>Item</th><th>Owner</th></tr>'+
+          respRow('Draft authored',r.authoredBy)+respRow('Final wording',r.finalWordingBy)+
+          respRow('Decision approved',r.approvedBy)+respRow('Policy applied',r.policy);
+
+        document.getElementById('ppTrace').innerHTML=(p.decisionTrace||[]).map(function(t){
+          var dot=t.intent==='author'?'A':(t.intent==='edit'?'✎':'✓');
+          var cls=t.intent==='author'?'svc':(t.intent==='edit'?'edit':'appr');
+          return '<div class="tr '+cls+'"><div class="rail"><div class="dot">'+dot+
+            '</div><div class="line"></div></div><div class="c"><div class="ct">'+esc(t.label)+
+            '</div><div class="cm">'+esc(t.actor)+' · row '+esc(String(t.rowHash).slice(0,12))+'…</div></div></div>';
+        }).join('');
+
+        document.getElementById('ppDiff').innerHTML=(p.humanJudgement.diff||[]).map(function(s){
+          if(s.op==='EQUAL'){return esc(s.text)+' ';}
+          if(s.op==='DELETE'){return '<span class="del">'+esc(s.text)+'</span> ';}
+          return '<span class="ins">'+esc(s.text)+'</span> ';
+        }).join('');
+        var hj=p.humanJudgement;
+        document.getElementById('ppDiffNote').textContent=
+          (hj.note||'')+(hj.appealRoute?(' Appeal route: '+hj.appealRoute+'.'):'')+
+          (hj.signposting?(' '+hj.signposting):'');
+
+        var prov=(p.sources.provided||[]).map(function(s){
+          return '<div class="src"><span>'+esc(s)+'</span><span class="pill p-strong">provided</span></div>';}).join('');
+        var miss=(p.sources.missing||[]).map(function(s){
+          return '<div class="src"><span>'+esc(s)+' <span class="meta">required</span></span><span class="pill p-missing">missing</span></div>';}).join('');
+        document.getElementById('ppSources').innerHTML=prov+miss;
+
+        var g=p.governingRules,tech=g.technical;
+        document.getElementById('ppGov').innerHTML=
+          '<span><span class="k">Policy</span> <span class="v">'+esc(g.policy)+'</span></span>'+
+          '<span><span class="k">Officer</span> <span class="v">'+esc(g.officer)+'</span></span>'+
+          '<span><span class="k">Decided</span> <span class="v">'+new Date(g.decidedAt).toLocaleString('en-GB')+'</span></span>';
+        document.getElementById('ppTech').innerHTML=
+          'ledger entries: '+tech.ledgerEntries+' · chain '+(cv.ok?'intact, no gaps':'BROKEN')+'<br>'+
+          'draft hash: '+esc(tech.draftHash)+'…<br>edit hash: '+esc(tech.editHash)+'…<br>'+
+          'approve hash: '+esc(tech.approveHash)+'…<br>export hash: '+esc(tech.exportHash);
+      })
+      .catch(function(err){
+        document.getElementById('ppVerifyDetail').textContent='Could not reach Authority ('+err.message+').';
+      });
+  }
+  renderProofPack();
 </script>
 </body>
 </html>
