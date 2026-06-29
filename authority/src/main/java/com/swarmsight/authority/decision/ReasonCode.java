@@ -12,6 +12,8 @@ public final class ReasonCode {
     public static final String CERTIFICATE_INVALID = "CERTIFICATE_INVALID";
     public static final String REQUIRED_INPUT_ABSENT = "REQUIRED_INPUT_ABSENT";
     public static final String EVICTION_RISK_DEPENDENTS = "EVICTION_RISK_DEPENDENTS";
+    public static final String EVIDENCE_MISSING = "EVIDENCE_MISSING";
+    public static final String AUTONOMY_CEILING_EXCEEDED = "AUTONOMY_CEILING_EXCEEDED";
     public static final String INTERNAL_ERROR = "INTERNAL_ERROR";
 
     private ReasonCode() {

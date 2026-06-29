@@ -17,7 +17,29 @@ stop.
 
 ## What works end to end
 
-### Sprint 1: the ledger and the verdict path (current)
+### Sprint 2: policy as versioned data, guards, autonomy (current)
+
+- Policy is versioned data in the `policies` table, each version with an
+  `effective_from`. The table rejects UPDATE and DELETE: a change is a new
+  version, never an edit. Proven by a test.
+- Authority resolves the version in force at the decision's timestamp. A
+  decision dated before a version takes effect is judged under the earlier
+  version. Proven by a test (HA-09 v6 before April 2025, v7 after).
+- The verdict is computed from a level model: start at the action floor, guards
+  raise the required level (clamped at L4_HUMAN), confidence sub-scores lower
+  the certificate ceiling (never raise it), then compare. Proven by tests.
+- HA-09 v7 carries the eviction-risk-with-dependent-children guard and the
+  evidence-missing guard. A case with eviction risk and dependent children holds
+  for an officer with a plain-English brief.
+- GET `/policies/{workflow}/versions` lists the real versions with their
+  effective dates and guards.
+- Frontend: the Case surface shows the real review brief and the policy version
+  that applied; a new Policy versions screen lists the real versions.
+
+The level model, policy immutability, confidence rules, and caching stance are
+locked in DECISIONS.md.
+
+### Sprint 1: the ledger and the verdict path
 
 - POST `/decide` takes a DecisionRequest, decides allow, hold, or block against
   the hardcoded HA-09 policy, writes exactly one hash-chained LedgerRow, and

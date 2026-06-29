@@ -141,3 +141,71 @@ Otherwise ALLOW. Policy becomes versioned data in Sprint 2; this is a stand-in.
 Authority allows cross-origin GET and POST from any origin in development, so
 the static demo can fetch verdicts. This is a development convenience and will
 be tightened before any real deployment.
+
+## Sprint 2: policy as versioned data, guards, autonomy
+
+Locked 2026-06-29.
+
+### Policy is never mutated
+
+A policy change is a new version with a new `effective_from`, never an edit. The
+`policies` table rejects UPDATE and DELETE at the database level, the same way
+the ledger does. INSERT is allowed, because a new version is a new row. This is
+what lets a decision be re-audited under the exact version that was in force
+when it was made, forever.
+
+### The level model
+
+Five levels, ordered: `L0 < L1 < L2 < L3 < L4_HUMAN`.
+
+Two quantities are computed for each decision:
+
+- `required_level`: the handling authority the case demands. It starts at the
+  action floor and guards can only raise it. It is clamped at `L4_HUMAN`, which
+  means "a human must decide"; no input can raise a case past that meaning.
+- `effective_ceiling`: the authority the agent may exercise for this case. It
+  starts at the certificate ceiling (one of `L0` to `L3`) and the three
+  confidence sub-scores can only lower it. Confidence never raises it above the
+  certificate ceiling.
+
+The effect follows from comparing the two:
+
+- `required_level == L4_HUMAN` then HOLD (a human must decide).
+- else `required_level <= effective_ceiling` then ALLOW.
+- else (`required_level > effective_ceiling`) then HOLD (escalate: the case
+  needs more authority than the agent holds here).
+
+BLOCK is reserved for the structural failures from Sprint 1 (unresolvable
+policy, unknown action) and an explicit guard denial. Guards in this sprint
+raise to `L4_HUMAN`, so they hold rather than block.
+
+### Confidence sub-scores
+
+Three sub-scores ride in the request inputs under `confidence`: `source`,
+`evidence`, and `interpretation`, each a number from 0 to 1. Each maps to a
+ceiling cap (>= 0.8 caps at L3, >= 0.5 at L2, >= 0.3 at L1, else L0). The
+effective ceiling is the minimum of the certificate ceiling and every present
+cap. Absent sub-scores do not lower the ceiling. They can only lower, never
+raise, because the ceiling is a minimum. Real confidence comes from Intelligence
+in Sprint 6; until then the request carries it (or omits it).
+
+### Certificate ceiling
+
+Stubbed: a valid certificate grants ceiling `L2`, a missing or expired one
+grants `L0`. The real certificate and its ceiling arrive in Sprint 6. The check
+is already wired into the verdict path.
+
+### Guards as data
+
+Each guard is data: a `name`, a `when` (a list of clauses, all of which must
+hold, each clause a `key` plus an `op` of `IS_TRUE` or `IS_ABSENT`), a `raiseTo`
+level, a `reasonCode`, a `brief`, and a `source` for provenance. HA-09 v7
+carries two guards: eviction risk with dependent children, and eviction risk
+with the latest eviction notice missing. Both raise to `L4_HUMAN`.
+
+### Caching
+
+No caching of policy resolution yet. Each decision resolves the version in force
+at its own timestamp with a single indexed query. Caching can come later with a
+key that includes the effective timestamp; doing it now would add a correctness
+risk for no measured gain.

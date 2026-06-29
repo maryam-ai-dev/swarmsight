@@ -3,6 +3,7 @@ package com.swarmsight.authority.decision;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -12,6 +13,8 @@ import com.swarmsight.authority.ledger.Effect;
 import com.swarmsight.authority.ledger.LedgerRow;
 import com.swarmsight.authority.ledger.LedgerRepository;
 import com.swarmsight.authority.ledger.LedgerService;
+import com.swarmsight.authority.policy.Level;
+import com.swarmsight.authority.policy.PolicyRepository;
 import com.swarmsight.authority.run.RunContextRepository;
 import java.time.Instant;
 import java.util.Map;
@@ -28,14 +31,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class DecisionServiceTest {
 
-    @Mock private PolicyEvaluator policyEvaluator;
+    @Mock private PolicyRepository policyRepository;
+    @Mock private VerdictEngine verdictEngine;
     @Mock private CertificateService certificateService;
     @Mock private LedgerService ledgerService;
     @Mock private LedgerRepository ledgerRepository;
     @Mock private RunContextRepository runContextRepository;
 
     private DecisionService service() {
-        return new DecisionService(policyEvaluator, certificateService, ledgerService,
+        return new DecisionService(policyRepository, verdictEngine, certificateService, ledgerService,
                 ledgerRepository, runContextRepository, new ObjectMapper());
     }
 
@@ -46,8 +50,9 @@ class DecisionServiceTest {
     @Test
     void internalErrorHoldsAndWritesNothing() {
         when(ledgerRepository.findByRequestId("req-1")).thenReturn(Optional.empty());
-        when(certificateService.statusFor("agent-1")).thenReturn(CertificateStatus.VALID);
-        when(policyEvaluator.evaluate(any(), any())).thenThrow(new RuntimeException("boom"));
+        when(certificateService.check("agent-1")).thenReturn(new CertificateCheck(CertificateStatus.VALID, Level.L2));
+        when(policyRepository.resolve(eq("HA-09"), any())).thenReturn(Optional.empty());
+        when(verdictEngine.evaluate(any(), any(), any())).thenThrow(new RuntimeException("boom"));
 
         Verdict v = service().decide(request());
 
@@ -72,7 +77,7 @@ class DecisionServiceTest {
         assertThat(v.effect()).isEqualTo(Effect.ALLOW);
         assertThat(v.seq()).isEqualTo(7L);
         assertThat(v.rowHash()).isEqualTo("rowhash");
-        verify(policyEvaluator, never()).evaluate(any(), any());
+        verify(verdictEngine, never()).evaluate(any(), any(), any());
         verify(ledgerService, never()).append(
                 anyString(), anyString(), anyString(), anyString(), anyString(),
                 anyString(), any(), anyString(), any());

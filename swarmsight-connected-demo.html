@@ -463,7 +463,19 @@
     </div>
     <div class="certline" id="caseCertline">Prepared under certificate SWS-CERT-HX-V3-0047 · policy HA-09 v7. The service is certified to draft, not to send.</div>
     <div style="margin-top:8px"><span class="btn">Accept and send</span><span class="btn sec">Edit draft</span><span class="btn sec">Request evidence</span><span class="btn sec">Escalate to senior</span></div>
-    <div class="nav2"><span class="lk" data-t="officer">← Back to cases</span><span style="display:flex;gap:18px"><span class="lk" data-t="masking">What the agent could see</span><span class="lk" data-t="audit">See the full record →</span></span></div>
+    <div class="nav2"><span class="lk" data-t="officer">← Back to cases</span><span style="display:flex;gap:18px"><span class="lk" data-t="policies">Policy versions</span><span class="lk" data-t="masking">What the agent could see</span><span class="lk" data-t="audit">See the full record →</span></span></div>
+  </div>
+</section>
+
+<!-- ===== POLICY VERSIONS ===== -->
+<section class="screen reg-gov" id="policies">
+  <div class="gm"><span class="sq"></span><span class="nm">SwarmSight <span>· Housing appeals</span></span></div>
+  <div class="gp"><span class="tag t-b">Beta</span><span>Policy is versioned data. A change is a new version, never an edit.</span></div>
+  <div class="mn">
+    <div class="crumb"><span class="lk" data-t="case">HX-4471</span> › Policy versions</div>
+    <h1>Housing Appeals Policy HA-09</h1>
+    <p class="lead">Every decision is judged under the version in force at its own timestamp, and re-audited under that same version forever. These are the real versions held by Authority.</p>
+    <div id="policyVersionsList" style="margin-top:18px">Loading policy versions from Authority…</div>
   </div>
 </section>
 
@@ -583,6 +595,32 @@
       });
   }
   renderVerdict();
+
+  // Sprint 2: the Policy versions screen lists the real versions Authority holds,
+  // newest first, with their effective dates and guards. Read-only.
+  function renderPolicyVersions(){
+    var box=document.getElementById('policyVersionsList');
+    fetch(AUTHORITY_API+'/policies/HA-09/versions')
+      .then(function(r){if(!r.ok){throw new Error('HTTP '+r.status);}return r.json();})
+      .then(function(versions){
+        if(!versions.length){box.textContent='No policy versions found.';return;}
+        box.innerHTML=versions.map(function(v,i){
+          var eff=new Date(v.effectiveFrom).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+          var inForce=i===0?' <span class="tag t-b">in force</span>':'';
+          var guards=(v.guards||[]).map(function(g){
+            return '<div class="src"><span class="l">'+g.name+'</span> raises to '+g.raiseTo+
+              ' · <span style="color:#505a5f">'+g.source+'</span></div>';
+          }).join('')||'<div class="src" style="color:#505a5f">No guards.</div>';
+          return '<div class="sl" style="margin-bottom:16px"><div class="r"><span class="k">'+
+            v.policyId+' '+v.version+inForce+'</span><span class="vv">effective '+eff+'</span></div>'+
+            '<div style="margin-top:10px"><b>Actions:</b> '+(v.actions||[]).join(', ')+
+            ' &nbsp; <b>Required inputs:</b> '+(v.requiredInputs||[]).join(', ')+'</div>'+
+            '<div class="h2" style="margin-top:12px">Guards</div>'+guards+'</div>';
+        }).join('');
+      })
+      .catch(function(err){box.textContent='Could not reach Authority ('+err.message+').';});
+  }
+  renderPolicyVersions();
 </script>
 </body>
 </html>
