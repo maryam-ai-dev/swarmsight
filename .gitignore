@@ -19,3 +19,6 @@ intelligence/.pytest_cache/
 
 # Env
 .env
+
+# Markdown docs (kept out of the repo)
+*.md

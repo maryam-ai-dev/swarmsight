@@ -19,7 +19,8 @@ public record PolicyChange(
         String conflictReason,
         Instant effectiveFrom,
         Instant createdAt,
-        Instant activatedAt) {
+        Instant activatedAt,
+        Instant suggestedEffectiveFrom) {
 
     public enum Status {
         PROPOSED,

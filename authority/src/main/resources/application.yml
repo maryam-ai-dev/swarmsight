@@ -27,7 +27,78 @@ swarmsight:
     # the certified regime, decided on policy alone. Empty this for production;
     # any unlisted, uncertified actor is blocked. See DECISIONS.md.
     shadow-actors: ${SHADOW_ACTORS:agent-1,agent-housing-1}
+  agents:
+    # Registered agents are reached at arbitrary HTTP endpoints. The endpoint is
+    # validated (open to the public internet, internal blocked) before any call.
+    # Hosts on this allowlist bypass the private-address block; keep it to the
+    # internal services you operate (here, the Intelligence sidecar). For a
+    # production split, set AGENT_ENDPOINT_ALLOWLIST to the backend's real
+    # internal hostnames, or empty to refuse all internal targets.
+    endpoint-allowlist: ${AGENT_ENDPOINT_ALLOWLIST:intelligence,localhost,127.0.0.1}
+    # Outbound call bounds, so a slow or hostile endpoint cannot hang a run.
+    connect-timeout-ms: ${AGENT_CONNECT_TIMEOUT_MS:5000}
+    read-timeout-ms: ${AGENT_READ_TIMEOUT_MS:15000}
+  sharepoint:
+    # The department's SharePoint, via Microsoft Graph (app-only / client
+    # credentials). Leave these blank to use the in-process mock. site is a
+    # pre-resolved site id, or "host:/sites/Name" to resolve. See README
+    # (Connecting a test SharePoint).
+    #
+    # mode = document (default): read an application document and extract the
+    # fields from it (the realistic path). mode = list: read pre-filled list
+    # columns. In document mode, list/case-ref-column are unused; the connector
+    # reads the site's default document library.
+    mode: ${SHAREPOINT_MODE:document}
+    tenant-id: ${SHAREPOINT_TENANT_ID:}
+    client-id: ${SHAREPOINT_CLIENT_ID:}
+    client-secret: ${SHAREPOINT_CLIENT_SECRET:}
+    site: ${SHAREPOINT_SITE:}
+    list: ${SHAREPOINT_LIST:}
+    case-ref-column: ${SHAREPOINT_CASE_REF_COLUMN:}
+  extraction:
+    # The trusted intake step uses Claude to extract fields from a document when a
+    # key is set; otherwise it returns the demo fields offline. Extraction is
+    # trusted and runs before the permission mirror, so the agent still only ever
+    # sees the masked record.
+    api-key: ${ANTHROPIC_API_KEY:}
+    model: ${EXTRACTION_MODEL:claude-opus-4-8}
+    base-url: ${EXTRACTION_BASE_URL:https://api.anthropic.com}
+  ingestion:
+    # Live policy ingestion fetches published legislation/policy text and stages a
+    # proposed change (Claude proposes the guards and the commencement date; a
+    # human still reviews and activates). Fetches are restricted to these hosts
+    # (an SSRF guard): it cannot reach internal addresses. Reuses the extraction
+    # key above for the Claude call. For per-borough policy, add each council's
+    # host here and ingest its allocation scheme into that council's policy id.
+    allowlist: ${POLICY_SOURCE_ALLOWLIST:legislation.gov.uk,www.legislation.gov.uk}
+    max-chars: ${POLICY_SOURCE_MAX_CHARS:60000}
+    # Ingesting into a policy id that has no versions yet (a new council scheme)
+    # bootstraps a v0 from this national framework's structure, with no guards.
+    framework-policy: ${POLICY_FRAMEWORK:HA-09}
+    # Optional auto-poller. Off by default. When enabled, each watched source is
+    # checked on the interval and a change is staged for review (never activated).
+    # watch is a comma-separated list of "url|policyId" (policyId defaults to
+    # HA-09). One entry per council source drives per-borough ingestion.
+    poll:
+      enabled: ${POLICY_POLL_ENABLED:false}
+      interval-ms: ${POLICY_POLL_INTERVAL_MS:3600000}
+      initial-delay-ms: ${POLICY_POLL_INITIAL_DELAY_MS:60000}
+    watch: ${POLICY_WATCH:}
   cors:
     # Comma-separated origin patterns. The default is open for the demo; a pilot
     # locks this to its real frontend origin, for example https://swarmsight.gov.uk.
     allowed-origins: ${CORS_ALLOWED_ORIGINS:*}
+  auth:
+    # HS256 signing secret for session tokens. MUST be at least 32 bytes and MUST
+    # be overridden in production (AUTH_JWT_SECRET). The dev default below only
+    # exists so the stack boots locally.
+    jwt-secret: ${AUTH_JWT_SECRET:dev-only-insecure-secret-change-me-now-0123456789}
+    # Session lifetime in minutes (default 8 hours).
+    jwt-ttl-minutes: ${AUTH_JWT_TTL_MINUTES:480}
+    # Bootstrap admin. If the password is blank, one is generated and logged once
+    # at startup. Set AUTH_ADMIN_EMAIL / AUTH_ADMIN_PASSWORD for production.
+    admin-email: ${AUTH_ADMIN_EMAIL:admin@swarmsight.local}
+    admin-password: ${AUTH_ADMIN_PASSWORD:}
+    # Shared password for the demo persona accounts, only seeded when demo-seed
+    # is on. Has no effect in production (demo-seed false).
+    demo-password: ${AUTH_DEMO_PASSWORD:swarmsight-demo}

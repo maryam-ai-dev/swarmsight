@@ -71,7 +71,7 @@ public class PolicyWorkbench {
                 "change-" + req.policyId() + "-" + req.proposedVersion(),
                 req.policyId(), req.baseVersion(), req.proposedVersion(),
                 req.sources().stream().map(ProposeRequest.SourceInput::document).toList(),
-                extraction.candidate(), status, extraction.conflictReason(), null, Instant.now(), null);
+                extraction.candidate(), status, extraction.conflictReason(), null, Instant.now(), null, null);
         changeRepository.insert(change);
         return change;
     }

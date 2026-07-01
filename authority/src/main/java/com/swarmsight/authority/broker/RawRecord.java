@@ -12,5 +12,6 @@ record RawRecord(
         String connector,
         String resourceScope,
         Map<String, Object> fields,
-        Map<String, FieldEffect> sourcePermissions) {
+        Map<String, FieldEffect> sourcePermissions,
+        SourceDocumentRef document) {
 }

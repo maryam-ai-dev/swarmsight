@@ -53,12 +53,27 @@ public class CertificationService {
     }
 
     public Outcome certify(Agent agent, String agentId, String builder, String approver) {
+        Outcome separation = checkSeparation(builder, approver);
+        return separation != null ? separation : finish(arenaRunner.run(agent, agentId), agentId, builder, approver);
+    }
+
+    /** Certify against an explicit suite (e.g. one generated from the policy). */
+    public Outcome certify(
+            Agent agent, String agentId, String builder, String approver, java.util.List<Scenario> scenarios) {
+        Outcome separation = checkSeparation(builder, approver);
+        return separation != null ? separation
+                : finish(arenaRunner.run(agent, agentId, scenarios), agentId, builder, approver);
+    }
+
+    private Outcome checkSeparation(String builder, String approver) {
         if (builder == null || builder.equals(approver)) {
             return new Outcome(null, null, null,
                     "The builder cannot be the approver. Certification needs a separate sign-off.");
         }
+        return null;
+    }
 
-        ArenaResult arenaResult = arenaRunner.run(agent, agentId);
+    private Outcome finish(ArenaResult arenaResult, String agentId, String builder, String approver) {
         if (!arenaResult.overallPass()) {
             String reason = !arenaResult.safetyPass()
                     ? "Failed the safety gate on a severe or catastrophic scenario."

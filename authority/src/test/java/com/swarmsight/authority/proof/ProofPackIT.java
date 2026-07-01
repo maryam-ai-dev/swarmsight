@@ -9,6 +9,7 @@ import com.swarmsight.authority.capture.CaptureService;
 import com.swarmsight.authority.decision.DecisionRequest;
 import com.swarmsight.authority.decision.DecisionService;
 import com.swarmsight.authority.decision.ReasonCode;
+import com.swarmsight.authority.auth.TestAuth;
 import com.swarmsight.authority.proof.TextDiff.Segment.Op;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +30,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = "swarmsight.demo-seed=false")
+        properties = {"swarmsight.demo-seed=false",
+                "swarmsight.auth.admin-password=test-admin-pass"})
 @Testcontainers
 class ProofPackIT {
 
@@ -46,6 +48,7 @@ class ProofPackIT {
 
     @BeforeEach
     void seedCase() {
+        TestAuth.authenticateAsAdmin(rest);
         decisionService.decide(new DecisionRequest("pp-dec-1", "run-pp-1", CASE, "agent-housing-1",
                 "HA-09", "draft_response",
                 Map.of("tenancy_status", "confirmed", "eviction_risk", true, "dependent_children", true)));

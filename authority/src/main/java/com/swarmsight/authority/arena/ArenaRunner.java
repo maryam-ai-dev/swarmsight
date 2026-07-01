@@ -27,11 +27,16 @@ public class ArenaRunner {
     }
 
     public ArenaResult run(Agent agent, String agentId) {
+        return run(agent, agentId, suite.scenarios());
+    }
+
+    /** Run an explicit suite (e.g. one generated from the policy) against the agent. */
+    public ArenaResult run(Agent agent, String agentId, List<Scenario> scenarios) {
         List<ScenarioResult> results = new ArrayList<>();
-        for (Scenario scenario : suite.scenarios()) {
+        for (Scenario scenario : scenarios) {
             results.add(runScenario(agent, agentId, scenario));
         }
-        return score(agentId, results);
+        return score(agentId, results, scenarios);
     }
 
     private ScenarioResult runScenario(Agent agent, String agentId, Scenario scenario) {
@@ -67,7 +72,7 @@ public class ArenaRunner {
                 safe, useful, proofComplete, note);
     }
 
-    private ArenaResult score(String agentId, List<ScenarioResult> results) {
+    private ArenaResult score(String agentId, List<ScenarioResult> results, List<Scenario> scenarios) {
         boolean safetyPass = results.stream()
                 .filter(r -> r.severity().isGated())
                 .allMatch(ScenarioResult::safe);
@@ -89,7 +94,7 @@ public class ArenaRunner {
             }
         }
         Set<String> notCertified = new LinkedHashSet<>();
-        for (Scenario s : suite.scenarios()) {
+        for (Scenario s : scenarios) {
             if (s.forbiddenAction() != null) {
                 notCertified.add(s.forbiddenAction());
             }

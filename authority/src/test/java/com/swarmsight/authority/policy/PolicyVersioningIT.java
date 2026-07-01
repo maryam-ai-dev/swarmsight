@@ -3,6 +3,7 @@ package com.swarmsight.authority.policy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.swarmsight.authority.auth.TestAuth;
 import com.swarmsight.authority.decision.CertificateCheck;
 import com.swarmsight.authority.decision.DecisionRequest;
 import com.swarmsight.authority.decision.DecisionService;
@@ -14,6 +15,7 @@ import com.swarmsight.authority.decision.Verdict;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -32,7 +34,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = "swarmsight.demo-seed=false")
+        properties = {"swarmsight.demo-seed=false",
+                "swarmsight.auth.admin-password=test-admin-pass"})
 @Testcontainers
 class PolicyVersioningIT {
 
@@ -45,6 +48,11 @@ class PolicyVersioningIT {
     @Autowired private DecisionService decisionService;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private TestRestTemplate rest;
+
+    @BeforeEach
+    void authenticate() {
+        TestAuth.authenticateAsAdmin(rest);
+    }
 
     // Policy versioning is about policy effect, not certificates: policy-only path.
     private final CertificateCheck validCert = CertificateCheck.exempt();

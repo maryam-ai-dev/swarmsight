@@ -3,6 +3,7 @@ package com.swarmsight.authority.ledger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.swarmsight.authority.auth.TestAuth;
 import com.swarmsight.authority.decision.DecisionRequest;
 import com.swarmsight.authority.decision.DecisionService;
 import com.swarmsight.authority.decision.Verdict;
@@ -14,6 +15,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -35,7 +37,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = "swarmsight.demo-seed=false")
+        properties = {"swarmsight.demo-seed=false",
+                "swarmsight.auth.admin-password=test-admin-pass"})
 @Testcontainers
 class LedgerVerdictIT {
 
@@ -48,6 +51,11 @@ class LedgerVerdictIT {
     @Autowired private Hashing hashing;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private TestRestTemplate rest;
+
+    @BeforeEach
+    void authenticate() {
+        TestAuth.authenticateAsAdmin(rest);
+    }
 
     private DecisionRequest clearRequest(String requestId, String runId, String caseRef) {
         return new DecisionRequest(requestId, runId, caseRef, "agent-1", "HA-09", "draft_response",

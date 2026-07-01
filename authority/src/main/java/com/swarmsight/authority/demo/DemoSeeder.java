@@ -1,7 +1,9 @@
 package com.swarmsight.authority.demo;
 
+import com.swarmsight.authority.arena.AgentRepository;
 import com.swarmsight.authority.arena.CertificationService;
 import com.swarmsight.authority.arena.CompliantAgent;
+import com.swarmsight.authority.arena.RegisteredAgent;
 import com.swarmsight.authority.capture.CaptureRequests.ApproveRequest;
 import com.swarmsight.authority.capture.CaptureRequests.AuthorRequest;
 import com.swarmsight.authority.capture.CaptureRequests.EditRequest;
@@ -18,10 +20,12 @@ import com.swarmsight.authority.workbench.PolicyWorkbench;
 import com.swarmsight.authority.workbench.ProposeRequest;
 import com.swarmsight.authority.workbench.ProposeRequest.SourceInput;
 import com.swarmsight.authority.workbench.SourceDocument;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -50,17 +54,42 @@ public class DemoSeeder implements ApplicationRunner {
     private final CaptureService captureService;
     private final CertificationService certificationService;
     private final PolicyWorkbench policyWorkbench;
+    private final AgentRepository agentRepository;
+    private final String intelligenceBaseUrl;
 
     public DemoSeeder(DecisionService decisionService, CaptureService captureService,
-            CertificationService certificationService, PolicyWorkbench policyWorkbench) {
+            CertificationService certificationService, PolicyWorkbench policyWorkbench,
+            AgentRepository agentRepository,
+            @Value("${swarmsight.intelligence.base-url:http://localhost:8000}") String intelligenceBaseUrl) {
         this.decisionService = decisionService;
         this.captureService = captureService;
         this.certificationService = certificationService;
         this.policyWorkbench = policyWorkbench;
+        this.agentRepository = agentRepository;
+        this.intelligenceBaseUrl = intelligenceBaseUrl;
     }
 
     @Override
     public void run(org.springframework.boot.ApplicationArguments args) {
+        // Register the demo agent in the registry, pointing at the internal
+        // Intelligence service, so the live assurance run reaches a real endpoint
+        // and the rest of the flow (certificate, go-live, oversight) keeps its id.
+        if (!agentRepository.existsById(AGENT)) {
+            agentRepository.insert(new RegisteredAgent(
+                    AGENT, "Housing appeals agent", "v3",
+                    intelligenceBaseUrl + "/agent/act", "gov-uk-prod",
+                    List.of("draft_response", "request_evidence", "escalate",
+                            "send_decision", "close_case"),
+                    null, "owner@swarmsight.local", true, Instant.now(), "HA-09"));
+        }
+        // The rest of the department's Core-4 assistants, each spun up for a
+        // workflow and governed against the department's policy for that workflow.
+        // They share the Intelligence endpoint (same model) and are registered but
+        // not yet certified, so the arena can be run against them live in the demo.
+        seedAgent("homelessness-triage-v1", "Homelessness triage agent", "HL-01");
+        seedAgent("repairs-triage-v1", "Repairs triage agent", "RP-01");
+        seedAgent("foi-redaction-v1", "FOI redaction agent", "FOI-01");
+
         Verdict verdict = decisionService.decide(new DecisionRequest(
                 "seed-hx-4471", RUN, CASE, "agent-housing-1", "HA-09", "draft_response",
                 Map.of("tenancy_status", "confirmed", "eviction_risk", true, "dependent_children", true)));
@@ -111,5 +140,16 @@ public class DemoSeeder implements ApplicationRunner {
                 AGENT, outcome.certificate() != null,
                 outcome.certificate() == null ? "none" : outcome.certificate().ceiling(),
                 change.id(), change.status());
+    }
+
+    /** Register another department assistant for a workflow (idempotent). */
+    private void seedAgent(String id, String name, String workflow) {
+        if (agentRepository.existsById(id)) {
+            return;
+        }
+        agentRepository.insert(new RegisteredAgent(
+                id, name, "v1", intelligenceBaseUrl + "/agent/act", "gov-uk-prod",
+                List.of("draft_response", "request_evidence", "escalate"),
+                null, "owner@swarmsight.local", true, Instant.now(), workflow));
     }
 }

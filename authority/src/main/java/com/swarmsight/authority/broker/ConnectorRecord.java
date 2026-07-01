@@ -13,5 +13,6 @@ public record ConnectorRecord(
         String connector,
         String resourceScope,
         Map<String, Object> fields,
-        List<FieldEffectEntry> fieldEffects) {
+        List<FieldEffectEntry> fieldEffects,
+        SourceDocumentRef document) {
 }

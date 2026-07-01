@@ -28,6 +28,33 @@ services:
       AUTHORITY_DB_USER: swarmsight
       AUTHORITY_DB_PASSWORD: swarmsight
       INTELLIGENCE_BASE_URL: http://intelligence:8000
+      # Auth. These are LOCAL DEV values; override every one in production.
+      # The JWT secret must be at least 32 bytes.
+      AUTH_JWT_SECRET: dev-only-insecure-secret-change-me-now-0123456789
+      AUTH_ADMIN_EMAIL: admin@swarmsight.local
+      AUTH_ADMIN_PASSWORD: changeme-admin
+      AUTH_DEMO_PASSWORD: swarmsight-demo
+      # Real SharePoint via Microsoft Graph. Blank -> in-process mock. Set all
+      # five (plus optional case-ref column) to read a live test list. Supply
+      # from the host environment or a .env file; never commit the secret.
+      SHAREPOINT_TENANT_ID: ${SHAREPOINT_TENANT_ID:-}
+      SHAREPOINT_CLIENT_ID: ${SHAREPOINT_CLIENT_ID:-}
+      SHAREPOINT_CLIENT_SECRET: ${SHAREPOINT_CLIENT_SECRET:-}
+      SHAREPOINT_SITE: ${SHAREPOINT_SITE:-}
+      SHAREPOINT_LIST: ${SHAREPOINT_LIST:-}
+      SHAREPOINT_CASE_REF_COLUMN: ${SHAREPOINT_CASE_REF_COLUMN:-}
+      SHAREPOINT_MODE: ${SHAREPOINT_MODE:-document}
+      # Trusted intake extraction (Claude). Blank -> demo fields offline. Same key
+      # the agent uses; set it once. Never commit it.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      # Live policy ingestion. POLICY_WATCH is a comma-separated list of
+      # "url|policyId" the poller checks; POLICY_POLL_ENABLED turns the schedule on
+      # (the manual /policy-ingestion/poll endpoint works regardless).
+      POLICY_WATCH: ${POLICY_WATCH:-https://www.legislation.gov.uk/ukpga/1988/50/section/21|HA-09}
+      POLICY_POLL_ENABLED: ${POLICY_POLL_ENABLED:-false}
+      # Hosts the policy-source fetch is allowed to reach (SSRF guard). Add each
+      # council's host here to ingest its allocation scheme.
+      POLICY_SOURCE_ALLOWLIST: ${POLICY_SOURCE_ALLOWLIST:-legislation.gov.uk,www.legislation.gov.uk}
     ports:
       - "8080:8080"
     depends_on:
@@ -42,6 +69,13 @@ services:
 
   intelligence:
     build: ./intelligence
+    environment:
+      # The live agent reasons with Claude when this is set; without it, it
+      # falls back to the deterministic rule-based agent (so the demo still
+      # runs offline). Supply the key in the host environment or a .env file;
+      # do not commit it.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-opus-4-8}
     ports:
       - "8000:8000"
     healthcheck:

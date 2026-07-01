@@ -33,7 +33,8 @@ public class PolicyChangeRepository {
                 rs.getString("conflict_reason"),
                 instant(rs.getObject("effective_from", OffsetDateTime.class)),
                 rs.getObject("created_at", OffsetDateTime.class).toInstant(),
-                instant(rs.getObject("activated_at", OffsetDateTime.class)));
+                instant(rs.getObject("activated_at", OffsetDateTime.class)),
+                instant(rs.getObject("suggested_effective_from", OffsetDateTime.class)));
     }
 
     public void insert(PolicyChange c) {
@@ -67,6 +68,12 @@ public class PolicyChangeRepository {
                 "SELECT shadow_report FROM policy_changes WHERE id = ? AND shadow_report IS NOT NULL",
                 String.class, id);
         return rows.stream().findFirst().map(this::readTree);
+    }
+
+    /** Pre-fill the date a change suggests at activation (e.g. an ingested commencement date). */
+    public void setSuggestedEffectiveFrom(String id, Instant suggested) {
+        jdbc.update("UPDATE policy_changes SET suggested_effective_from = ? WHERE id = ?",
+                suggested == null ? null : OffsetDateTime.ofInstant(suggested, ZoneOffset.UTC), id);
     }
 
     public void markActivated(String id, Instant effectiveFrom, Instant activatedAt) {

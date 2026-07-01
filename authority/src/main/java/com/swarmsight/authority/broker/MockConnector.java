@@ -35,7 +35,9 @@ class MockConnector implements Connector {
         } else {
             put(fields, sourcePermissions, "note", "no record for scope " + grant.resourceScope(), FieldEffect.ALLOW);
         }
-        return new RawRecord(grant.connector(), grant.resourceScope(), fields, sourcePermissions);
+        SourceDocumentRef document = new SourceDocumentRef(
+                "mock-case-system:" + grant.resourceScope(), "v1", "Mock case record");
+        return new RawRecord(grant.connector(), grant.resourceScope(), fields, sourcePermissions, document);
     }
 
     private void put(Map<String, Object> fields, Map<String, FieldEffect> perms,

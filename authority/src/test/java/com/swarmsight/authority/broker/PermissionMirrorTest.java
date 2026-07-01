@@ -24,7 +24,7 @@ class PermissionMirrorTest {
                 Map.of("applicant_name", "Ms A. Adeyemi", "national_insurance", "QQ123456C",
                         "medical_notes", "Disability", "tenancy_status", "confirmed"),
                 Map.of("applicant_name", FieldEffect.ALLOW, "national_insurance", FieldEffect.ALLOW,
-                        "medical_notes", FieldEffect.ALLOW, "tenancy_status", FieldEffect.ALLOW));
+                        "medical_notes", FieldEffect.ALLOW, "tenancy_status", FieldEffect.ALLOW), null);
 
         PermissionMirror.Mirrored m = mirror.apply(raw);
 
@@ -43,7 +43,7 @@ class PermissionMirrorTest {
         // intersection denies.
         RawRecord raw = new RawRecord("mock", "s",
                 Map.of("applicant_name", "Ms A. Adeyemi"),
-                Map.of("applicant_name", FieldEffect.DENY));
+                Map.of("applicant_name", FieldEffect.DENY), null);
 
         PermissionMirror.Mirrored m = mirror.apply(raw);
 
@@ -56,7 +56,7 @@ class PermissionMirrorTest {
     void anUnmappedFieldFailsClosedToDeny() {
         RawRecord raw = new RawRecord("mock", "s",
                 Map.of("secret_field", "value"),
-                Map.of("secret_field", FieldEffect.ALLOW));
+                Map.of("secret_field", FieldEffect.ALLOW), null);
 
         PermissionMirror.Mirrored m = mirror.apply(raw);
 
@@ -68,7 +68,7 @@ class PermissionMirrorTest {
     void fieldEffectsAreInDeterministicNameOrder() {
         RawRecord raw = new RawRecord("mock", "s",
                 Map.of("zebra", "z", "apple", "a", "mango", "m"),
-                Map.of("zebra", FieldEffect.ALLOW, "apple", FieldEffect.ALLOW, "mango", FieldEffect.ALLOW));
+                Map.of("zebra", FieldEffect.ALLOW, "apple", FieldEffect.ALLOW, "mango", FieldEffect.ALLOW), null);
 
         PermissionMirror.Mirrored m = mirror.apply(raw);
 

@@ -187,13 +187,15 @@ public class CapabilityBroker {
         // The mirror runs before anything leaves the boundary. Raw values never
         // escape un-mirrored.
         PermissionMirror.Mirrored mirrored = permissionMirror.apply(raw);
-        recordFieldEffects(cap, connector, resourceScope, mirrored.fieldEffects());
-        return new ConnectorRecord(connector, resourceScope, mirrored.maskedFields(), mirrored.fieldEffects());
+        recordFieldEffects(cap, connector, resourceScope, mirrored.fieldEffects(), raw.document());
+        return new ConnectorRecord(connector, resourceScope, mirrored.maskedFields(),
+                mirrored.fieldEffects(), raw.document());
     }
 
-    /** Ledger the field_effects (never the values), proving what was exposed. */
+    /** Ledger the field_effects (never the values) and the source document, proving what was exposed. */
     private void recordFieldEffects(
-            Capability cap, String connector, String resourceScope, List<FieldEffectEntry> effects) {
+            Capability cap, String connector, String resourceScope, List<FieldEffectEntry> effects,
+            SourceDocumentRef document) {
         List<Map<String, Object>> effectsPayload = new ArrayList<>();
         for (FieldEffectEntry e : effects) {
             Map<String, Object> m = new LinkedHashMap<>();
@@ -207,6 +209,11 @@ public class CapabilityBroker {
         payload.put("capability_id", cap.id());
         payload.put("connector", connector);
         payload.put("resource_scope", resourceScope);
+        if (document != null) {
+            payload.put("document_id", document.id());
+            payload.put("document_version", document.version());
+            payload.put("document_name", document.name());
+        }
         payload.put("field_effects", effectsPayload);
 
         String workflow = runContextRepository.find(cap.runId()).map(RunContext::workflow).orElse("unknown");

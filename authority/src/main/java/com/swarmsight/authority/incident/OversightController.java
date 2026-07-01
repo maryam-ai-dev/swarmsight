@@ -16,16 +16,25 @@ import org.springframework.web.bind.annotation.RestController;
 public class OversightController {
 
     private final OversightService oversightService;
+    private final PolicyStandingService policyStandingService;
     private final LedgerRepository ledgerRepository;
 
-    public OversightController(OversightService oversightService, LedgerRepository ledgerRepository) {
+    public OversightController(OversightService oversightService,
+            PolicyStandingService policyStandingService, LedgerRepository ledgerRepository) {
         this.oversightService = oversightService;
+        this.policyStandingService = policyStandingService;
         this.ledgerRepository = ledgerRepository;
     }
 
     @GetMapping("/oversight/metrics")
     public Map<String, Object> metrics() {
         return oversightService.metrics();
+    }
+
+    /** Which agents are operating against an out-of-date policy, and why. */
+    @GetMapping("/oversight/policy-standing")
+    public List<PolicyStandingService.AgentPolicyStanding> policyStanding() {
+        return policyStandingService.standings();
     }
 
     @GetMapping("/agents/{agentId}/log")
